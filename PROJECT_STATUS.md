@@ -9,6 +9,11 @@
 - Added a local player store with queue selection, playback controls, volume, and local file import.
 - Added dark and light themes based on the shared color palette.
 - Shifted the layout toward a mobile-first baseline.
+- Added a frontend API layer for the local/backend environment.
+- Connected public tracks and releases to the backend API.
+- Connected playback to the backend authorization endpoint.
+- Added session-auth hydration and login/logout support in the frontend.
+- Added an initial admin UI for track CRUD and release CRUD.
 
 ## Current Frontend Shape
 
@@ -88,14 +93,15 @@
 
 ## Immediate Next Steps
 
-- Refine the music-side homepage mobile UI
-- Define the final public music sitemap
-- Add Vue routing for public sections and future admin sections
-- Connect frontend player state to backend catalog and playback authorization
-- Start the admin shell with protected routes and layout
+- Refine the admin UI into dedicated views instead of one combined page
+- Add release detail presentation and artwork handling
+- Add form validation and loading/error states for all admin actions
+- Add media upload UI once backend upload endpoints exist
+- Introduce routing for public music pages and protected admin pages
 
 ## Notes
 
 - Frontend repo: `portfolio_26`
 - Dev server port: `5193`
+- Frontend API env: `VITE_API_BASE_URL`
 - Initial backend repo is separate and will own playback authorization, uploads, auth, and media access rules
