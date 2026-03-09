@@ -1,10 +1,15 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:4200/api";
 
 async function request(path, options = {}) {
+  const hasCustomContentType = options.headers?.["Content-Type"] || options.headers?.["content-type"];
+  const defaultHeaders = hasCustomContentType || options.body instanceof FormData
+    ? {}
+    : { "Content-Type": "application/json" };
+
   const response = await fetch(`${API_BASE_URL}${path}`, {
     credentials: "include",
     headers: {
-      "Content-Type": "application/json",
+      ...defaultHeaders,
       ...(options.headers ?? {})
     },
     ...options
@@ -71,6 +76,19 @@ export const api = {
   },
   getAdminReleases() {
     return request("/admin/releases", { method: "GET" });
+  },
+  getAdminMedia() {
+    return request("/admin/media", { method: "GET" });
+  },
+  uploadMedia({ file, category }) {
+    const body = new FormData();
+    body.set("file", file);
+    body.set("category", category);
+
+    return request("/admin/media/upload", {
+      method: "POST",
+      body
+    });
   },
   createRelease(payload) {
     return request("/admin/releases", {

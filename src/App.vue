@@ -19,12 +19,16 @@ const activeMode = ref("music");
 const musicTab = ref("listen");
 const theme = ref(getInitialTheme());
 const releases = ref([]);
+const mediaAssets = ref([]);
 const audioRef = ref(null);
 const fileInputRef = ref(null);
+const mediaFileRef = ref(null);
 const statusMessage = ref("");
 const catalogLoading = ref(false);
 const adminBusy = ref(false);
+const uploadBusy = ref(false);
 const loginError = ref("");
+const uploadCategory = ref("audio");
 
 const loginForm = reactive({ email: "", password: "" });
 const trackForm = reactive(emptyTrack());
@@ -86,9 +90,14 @@ async function refreshCatalog() {
 
 async function refreshAdminData() {
   if (!isAdmin.value) return;
-  const [tracksResponse, releasesResponse] = await Promise.all([api.getAdminTracks(), api.getAdminReleases()]);
+  const [tracksResponse, releasesResponse, mediaResponse] = await Promise.all([
+    api.getAdminTracks(),
+    api.getAdminReleases(),
+    api.getAdminMedia()
+  ]);
   player.setTracks(tracksResponse.items);
   releases.value = releasesResponse.items;
+  mediaAssets.value = mediaResponse.items;
 }
 
 async function togglePlayback() {
@@ -151,6 +160,41 @@ async function submitLogin() {
     loginForm.password = "";
   } catch (error) {
     loginError.value = error.message;
+  }
+}
+
+function openMediaPicker() {
+  mediaFileRef.value?.click();
+}
+
+async function onMediaSelected(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+
+  uploadBusy.value = true;
+  statusMessage.value = "";
+
+  try {
+    const response = await api.uploadMedia({
+      file,
+      category: uploadCategory.value
+    });
+    mediaAssets.value = [response.item, ...mediaAssets.value];
+
+    if (uploadCategory.value === "audio") {
+      trackForm.storageKey = response.item.url;
+    }
+
+    if (uploadCategory.value === "artwork") {
+      releaseForm.artworkUrl = response.item.url;
+    }
+
+    statusMessage.value = "Upload completed.";
+  } catch (error) {
+    statusMessage.value = error.message;
+  } finally {
+    uploadBusy.value = false;
+    event.target.value = "";
   }
 }
 
@@ -406,6 +450,26 @@ onBeforeUnmount(() => audioRef.value?.pause());
 
         <template v-if="isAdmin">
           <Card class="panel">
+            <template #title>Media upload</template>
+            <template #content>
+              <div class="form-grid">
+                <label class="form-field">
+                  <span>Category</span>
+                  <select v-model="uploadCategory">
+                    <option value="audio">audio</option>
+                    <option value="artwork">artwork</option>
+                    <option value="misc">misc</option>
+                  </select>
+                </label>
+                <div class="form-actions">
+                  <Button :label="uploadBusy ? 'Uploading...' : 'Upload file'" icon="pi pi-upload" :disabled="uploadBusy" @click="openMediaPicker" />
+                </div>
+                <input ref="mediaFileRef" class="hidden-input" type="file" @change="onMediaSelected" />
+              </div>
+            </template>
+          </Card>
+
+          <Card class="panel">
             <template #title>Track form</template>
             <template #content>
               <form class="form-grid" @submit.prevent="submitTrack">
@@ -454,6 +518,16 @@ onBeforeUnmount(() => audioRef.value?.pause());
                   <div v-for="release in releases" :key="release.id" class="admin-item">
                     <div><strong>{{ release.title }}</strong><p>{{ release.slug }} · {{ release.format }}</p></div>
                     <div class="inline-actions"><button class="text-action" @click="editRelease(release)">Edit</button><button class="text-action danger" @click="removeRelease(release.id)">Delete</button></div>
+                  </div>
+                </div>
+                <div>
+                  <p class="admin-list-title">Media assets</p>
+                  <div v-for="asset in mediaAssets" :key="asset.id" class="admin-item">
+                    <div><strong>{{ asset.originalName }}</strong><p>{{ asset.category }} · {{ asset.url }}</p></div>
+                    <div class="inline-actions">
+                      <button class="text-action" @click="trackForm.storageKey = asset.url">Use for track</button>
+                      <button class="text-action" @click="releaseForm.artworkUrl = asset.url">Use for release</button>
+                    </div>
                   </div>
                 </div>
               </div>

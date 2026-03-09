@@ -14,6 +14,7 @@
 - Connected playback to the backend authorization endpoint.
 - Added session-auth hydration and login/logout support in the frontend.
 - Added an initial admin UI for track CRUD and release CRUD.
+- Added initial media upload handling in the admin UI and connected it to backend media endpoints.
 
 ## Current Frontend Shape
 
@@ -94,9 +95,9 @@
 ## Immediate Next Steps
 
 - Refine the admin UI into dedicated views instead of one combined page
-- Add release detail presentation and artwork handling
-- Add form validation and loading/error states for all admin actions
-- Add media upload UI once backend upload endpoints exist
+- Add release detail presentation and richer artwork handling
+- Add form validation and stronger loading/error states for all admin actions
+- Add inline asset previews and media filters in the admin UI
 - Introduce routing for public music pages and protected admin pages
 
 ## Notes
