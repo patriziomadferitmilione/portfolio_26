@@ -15,6 +15,7 @@
 - Added session-auth hydration and login/logout support in the frontend.
 - Added an initial admin UI for track CRUD and release CRUD.
 - Added initial media upload handling in the admin UI and connected it to backend media endpoints.
+- Added a persistent bottom mini-player with an expandable full-player sheet.
 
 ## Current Frontend Shape
 
@@ -98,6 +99,7 @@
 - Add release detail presentation and richer artwork handling
 - Add form validation and stronger loading/error states for all admin actions
 - Add inline asset previews and media filters in the admin UI
+- Decide whether to add artwork/image caching and later offline handling for public media
 - Introduce routing for public music pages and protected admin pages
 
 ## Notes

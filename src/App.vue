@@ -3,10 +3,10 @@ import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue"
 import { storeToRefs } from "pinia";
 import Button from "primevue/button";
 import Card from "primevue/card";
-import ProgressBar from "primevue/progressbar";
-import Slider from "primevue/slider";
 import Tag from "primevue/tag";
 import { api } from "./lib/api";
+import ExpandedPlayer from "./components/player/ExpandedPlayer.vue";
+import MiniPlayer from "./components/player/MiniPlayer.vue";
 import { useAuthStore } from "./stores/auth";
 import { usePlayerStore } from "./stores/player";
 
@@ -18,6 +18,7 @@ const { tracks, currentTrack, currentTrackId, isPlaying, currentTime, volume, ca
 const activeMode = ref("music");
 const musicTab = ref("listen");
 const theme = ref(getInitialTheme());
+const playerExpanded = ref(false);
 const releases = ref([]);
 const mediaAssets = ref([]);
 const audioRef = ref(null);
@@ -141,6 +142,10 @@ function seekTrack(event) {
 
 function openFilePicker() {
   fileInputRef.value?.click();
+}
+
+function openPlayer() {
+  playerExpanded.value = true;
 }
 
 function onFilesSelected(event) {
@@ -347,30 +352,21 @@ onBeforeUnmount(() => audioRef.value?.pause());
           <p v-if="statusMessage" class="status-message">{{ statusMessage }}</p>
         </div>
 
-        <Card class="hero-player">
+        <Card class="hero-player hero-player-summary">
           <template #content>
-            <div class="cover-art" :style="{ background: `linear-gradient(135deg, ${currentTrack?.accent?.[0] ?? 'var(--cover-start)'}, ${currentTrack?.accent?.[1] ?? 'var(--cover-mid)'}, ${currentTrack?.accent?.[2] ?? 'var(--cover-end)'})` }">
-              <div class="cover-overlay">
-                <Tag :value="currentTrack?.mood ?? 'No track'" severity="contrast" />
-                <div>
-                  <p class="cover-label">Listening room</p>
-                  <h2>{{ currentTrack?.title ?? "No track selected" }}</h2>
-                  <p>{{ currentTrack?.artist ?? "Patrizio Milione" }}</p>
-                  <p class="cover-note">{{ currentRelease?.title ?? "Waiting for releases..." }}</p>
+            <button class="hero-player-launch" @click="openPlayer">
+              <div class="cover-art" :style="{ background: `linear-gradient(135deg, ${currentTrack?.accent?.[0] ?? 'var(--cover-start)'}, ${currentTrack?.accent?.[1] ?? 'var(--cover-mid)'}, ${currentTrack?.accent?.[2] ?? 'var(--cover-end)'})` }">
+                <div class="cover-overlay">
+                  <Tag :value="currentTrack?.mood ?? 'No track'" severity="contrast" />
+                  <div>
+                    <p class="cover-label">Persistent Player</p>
+                    <h2>{{ currentTrack?.title ?? "No track selected" }}</h2>
+                    <p>{{ currentTrack?.artist ?? "Patrizio Milione" }}</p>
+                    <p class="cover-note">{{ currentRelease?.title ?? "Waiting for releases..." }}</p>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div class="player-body">
-              <div class="time-row"><span>{{ formattedTime }}</span><span>{{ formattedDuration }}</span></div>
-              <input class="timeline" type="range" min="0" max="100" :value="progress" @input="seekTrack" />
-              <ProgressBar :value="progress" :showValue="false" class="progress" />
-              <div class="control-row">
-                <Button icon="pi pi-step-backward" text rounded @click="player.playPrevious()" />
-                <Button :icon="isPlaying ? 'pi pi-pause' : 'pi pi-play'" rounded size="large" :disabled="!canPlayCurrent" @click="togglePlayback" />
-                <Button icon="pi pi-step-forward" text rounded @click="player.playNext()" />
-              </div>
-              <div class="volume-row"><i class="pi pi-volume-up" /><Slider :model-value="volume" @update:model-value="player.setVolume($event)" /></div>
-            </div>
+            </button>
           </template>
         </Card>
       </section>
@@ -536,5 +532,40 @@ onBeforeUnmount(() => audioRef.value?.pause());
         </template>
       </section>
     </section>
+
+    <MiniPlayer
+      v-if="activeMode === 'music'"
+      :track="currentTrack"
+      :is-playing="isPlaying"
+      :current-time-label="formattedTime"
+      :duration-label="formattedDuration"
+      :progress="progress"
+      :disabled="!canPlayCurrent"
+      @toggle="togglePlayback"
+      @next="player.playNext()"
+      @previous="player.playPrevious()"
+      @expand="openPlayer"
+    />
+
+    <ExpandedPlayer
+      :open="playerExpanded"
+      :track="currentTrack"
+      :release-title="currentRelease?.title ?? ''"
+      :is-playing="isPlaying"
+      :can-play="canPlayCurrent"
+      :volume="volume"
+      :progress="progress"
+      :current-time-label="formattedTime"
+      :duration-label="formattedDuration"
+      :queue="tracks"
+      :active-track-id="currentTrackId ?? ''"
+      @close="playerExpanded = false"
+      @toggle="togglePlayback"
+      @next="player.playNext()"
+      @previous="player.playPrevious()"
+      @volume-change="player.setVolume($event)"
+      @seek="seekTrack"
+      @select-track="player.selectTrack($event)"
+    />
   </div>
 </template>
