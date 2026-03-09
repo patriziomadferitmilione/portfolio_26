@@ -581,57 +581,50 @@ a {
 
 .mini-player {
   position: fixed;
-  left: 0.75rem;
-  right: 0.75rem;
-  bottom: 0.75rem;
+  left: 1rem;
+  right: 1rem;
+  bottom: 1rem;
   z-index: 30;
   display: grid;
   grid-template-columns: 1fr;
-  gap: 0.75rem;
-  padding: 0.85rem;
+  padding: 0.75rem 1rem;
   border-radius: 24px;
-  background: var(--panel);
-  border: 1px solid var(--panel-border);
-  box-shadow: 0 24px 80px rgba(0, 48, 73, 0.18);
-  backdrop-filter: blur(22px);
+  background: rgba(5, 7, 10, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.45);
 }
 
 .mini-player-main {
   display: grid;
-  grid-template-columns: 52px 1fr auto;
-  gap: 0.75rem;
+  grid-template-columns: 1fr auto;
   align-items: center;
-  padding: 0;
+  gap: 1rem;
   border: 0;
   background: transparent;
   color: inherit;
-  text-align: left;
 }
 
-.mini-player-art,
-.player-sheet-queue-art {
-  width: 52px;
-  height: 52px;
-  border-radius: 16px;
-  background-size: cover;
+.mini-player-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
 }
 
-.mini-player-title,
-.player-sheet-queue-item p {
-  margin: 0 0 0.25rem;
+.mini-player-title {
+  margin: 0;
   font-weight: 700;
 }
 
-.mini-player-meta,
-.player-sheet-queue-item span,
-.mini-player-time {
-  color: var(--text-muted);
-  font-size: 0.9rem;
+.mini-player-meta {
+  margin: 0;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.65);
 }
 
-.mini-player-time {
-  display: grid;
-  justify-items: end;
+.mini-player-controls {
+  display: flex;
+  justify-content: center;
+  gap: 0.6rem;
 }
 
 .mini-player-controls {
@@ -641,16 +634,16 @@ a {
 }
 
 .mini-player-progress {
-  height: 0.25rem;
+  height: 0.3rem;
   border-radius: 999px;
-  background: var(--line-soft);
+  background: rgba(255, 255, 255, 0.12);
   overflow: hidden;
 }
 
 .mini-player-progress span {
   display: block;
   height: 100%;
-  background: linear-gradient(135deg, var(--accent-strong), var(--accent));
+  background: linear-gradient(135deg, #fcbf49, #96c0b7);
 }
 
 .player-sheet {
@@ -740,6 +733,20 @@ a {
 
 .player-sheet-body {
   gap: 0.75rem;
+}
+
+.lyrics-panel {
+  margin-top: 0.75rem;
+  padding: 0.85rem;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.lyrics-body {
+  max-height: 150px;
+  overflow: auto;
+  line-height: 1.6;
 }
 
 .player-sheet-queue-header {

@@ -53,6 +53,7 @@ const progress = computed(() => {
   return duration ? Math.min(100, Math.round((currentTime.value / duration) * 100)) : 0;
 });
 const currentRelease = computed(() => releases.value.find((release) => release.tracks?.some((track) => track.id === currentTrackId.value)) ?? releases.value[0] ?? null);
+const currentLyrics = computed(() => currentTrack.value?.lyrics || currentRelease.value?.notes || "No lyrics available yet.");
 
 watch(() => currentTrack.value?.streamUrl, (streamUrl) => {
   if (!audioRef.value) return;
@@ -551,6 +552,7 @@ onBeforeUnmount(() => audioRef.value?.pause());
       :open="playerExpanded"
       :track="currentTrack"
       :release-title="currentRelease?.title ?? ''"
+      :lyrics="currentLyrics"
       :is-playing="isPlaying"
       :can-play="canPlayCurrent"
       :volume="volume"

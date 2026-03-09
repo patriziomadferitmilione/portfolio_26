@@ -34,14 +34,11 @@ defineEmits(["toggle", "next", "previous", "expand"]);
 <template>
   <div class="mini-player">
     <button class="mini-player-main" @click="$emit('expand')">
-      <div
-        class="mini-player-art"
-        :style="{ backgroundImage: `linear-gradient(135deg, ${(track?.accent ?? ['var(--cover-start)', 'var(--cover-mid)', 'var(--cover-end)']).join(', ')})` }"
-      />
       <div class="mini-player-copy">
         <p class="mini-player-title">{{ track?.title ?? "No track selected" }}</p>
-        <p class="mini-player-meta">{{ track?.artist ?? "Select a track to start" }}</p>
+        <p class="mini-player-meta">{{ track?.artist ?? "Select a track" }}</p>
       </div>
+      <div class="mini-player-spacer" />
       <div class="mini-player-time">
         <span>{{ currentTimeLabel }}</span>
         <span>{{ durationLabel }}</span>

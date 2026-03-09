@@ -19,6 +19,7 @@ function normalizeTrack(track, index = 0) {
     accent: track.accent ?? palette[index % palette.length],
     streamUrl: track.streamUrl ?? "",
     visibility: track.visibility ?? "public"
+    ,lyrics: track.lyrics ?? track.notes ?? ""
   };
 }
 

@@ -48,6 +48,10 @@ defineProps({
   activeTrackId: {
     type: String,
     default: ""
+  },
+  lyrics: {
+    type: String,
+    default: ""
   }
 });
 
@@ -119,6 +123,10 @@ defineEmits([
               <div class="volume-row">
                 <i class="pi pi-volume-up" />
                 <Slider :model-value="volume" @update:model-value="$emit('volume-change', $event)" />
+              </div>
+              <div class="lyrics-panel" v-if="lyrics">
+                <p class="eyebrow">Lyrics</p>
+                <div class="lyrics-body">{{ lyrics }}</div>
               </div>
             </div>
           </div>
