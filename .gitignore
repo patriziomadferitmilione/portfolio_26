@@ -8,6 +8,7 @@ Thumbs.db
 .idea/
 .vscode/
 coverage/
+portolio_26_be/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

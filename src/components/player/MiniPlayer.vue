@@ -1,5 +1,8 @@
 <script setup>
+import { ref } from "vue";
 import Button from "primevue/button";
+
+const touchStartX = ref(0);
 
 defineProps({
   track: {
@@ -25,18 +28,49 @@ defineProps({
   disabled: {
     type: Boolean,
     default: false
+  },
+  hidden: {
+    type: Boolean,
+    default: false
+  },
+  labels: {
+    type: Object,
+    default: () => ({})
   }
 });
 
-defineEmits(["toggle", "next", "previous", "expand"]);
+const emit = defineEmits(["toggle", "next", "previous", "expand", "show", "hide"]);
+
+function onTouchStart(event) {
+  touchStartX.value = event.touches?.[0]?.clientX ?? 0;
+}
+
+function onTouchEnd(event) {
+  const endX = event.changedTouches?.[0]?.clientX ?? touchStartX.value;
+  const delta = endX - touchStartX.value;
+  if (delta > 40) {
+    emit("show");
+  } else if (delta < -40) {
+    emit("hide");
+  }
+}
 </script>
 
 <template>
-  <div class="mini-player">
-    <button class="mini-player-main" @click="$emit('expand')">
+  <div class="mini-player" :class="{ hidden }">
+    <button class="mini-player-handle" @click="hidden ? $emit('show') : $emit('hide')">
+      <i :class="hidden ? 'pi pi-chevron-left' : 'pi pi-chevron-right'" />
+    </button>
+
+    <button
+      class="mini-player-main"
+      @click="$emit('expand')"
+      @touchstart.passive="onTouchStart"
+      @touchend.passive="onTouchEnd"
+    >
       <div class="mini-player-copy">
-        <p class="mini-player-title">{{ track?.title ?? "No track selected" }}</p>
-        <p class="mini-player-meta">{{ track?.artist ?? "Select a track" }}</p>
+        <p class="mini-player-title">{{ track?.title ?? labels.noTrackSelected }}</p>
+        <p class="mini-player-meta">{{ track?.artist ?? labels.selectTrack }}</p>
       </div>
       <div class="mini-player-spacer" />
       <div class="mini-player-time">

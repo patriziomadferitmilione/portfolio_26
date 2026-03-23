@@ -52,6 +52,10 @@ defineProps({
   lyrics: {
     type: String,
     default: ""
+  },
+  labels: {
+    type: Object,
+    default: () => ({})
   }
 });
 
@@ -74,9 +78,9 @@ defineEmits([
       <section class="player-sheet-panel">
         <div class="player-sheet-header">
           <div>
-            <p class="eyebrow">Now Playing</p>
-            <h2>{{ track?.title ?? "No track selected" }}</h2>
-            <p class="player-sheet-subtitle">{{ track?.artist ?? "Patrizio Milione" }}</p>
+            <p class="eyebrow">{{ labels.nowPlaying }}</p>
+            <h2>{{ track?.title ?? labels.noTrackSelected }}</h2>
+            <p class="player-sheet-subtitle">{{ track?.artist ?? labels.artistName }}</p>
           </div>
           <Button icon="pi pi-times" text rounded @click="$emit('close')" />
         </div>
@@ -88,8 +92,8 @@ defineEmits([
               :style="{ backgroundImage: `linear-gradient(135deg, ${(track?.accent ?? ['var(--cover-start)', 'var(--cover-mid)', 'var(--cover-end)']).join(', ')})` }"
             >
               <div class="player-sheet-overlay">
-                <Tag :value="track?.mood ?? 'Unreleased'" severity="contrast" />
-                <p>{{ releaseTitle || "Release loading..." }}</p>
+                <Tag :value="track?.mood ?? labels.unreleased" severity="contrast" />
+                <p>{{ releaseTitle || labels.releaseLoading }}</p>
               </div>
             </div>
 
@@ -125,7 +129,7 @@ defineEmits([
                 <Slider :model-value="volume" @update:model-value="$emit('volume-change', $event)" />
               </div>
               <div class="lyrics-panel" v-if="lyrics">
-                <p class="eyebrow">Lyrics</p>
+                <p class="eyebrow">{{ labels.lyrics }}</p>
                 <div class="lyrics-body">{{ lyrics }}</div>
               </div>
             </div>
@@ -133,7 +137,7 @@ defineEmits([
 
           <aside class="player-sheet-queue">
             <div class="player-sheet-queue-header">
-              <p class="eyebrow">Queue</p>
+              <p class="eyebrow">{{ labels.queue }}</p>
               <span>{{ queue.length }} tracks</span>
             </div>
 

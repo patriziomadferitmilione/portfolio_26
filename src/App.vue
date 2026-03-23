@@ -1,12 +1,13 @@
-<script setup>
+﻿<script setup>
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
 import { storeToRefs } from "pinia";
-import Button from "primevue/button";
-import Card from "primevue/card";
-import Tag from "primevue/tag";
 import { api } from "./lib/api";
 import ExpandedPlayer from "./components/player/ExpandedPlayer.vue";
 import MiniPlayer from "./components/player/MiniPlayer.vue";
+import AppHeader from "./components/AppHeader.vue";
+import SoftwareSection from "./components/SoftwareSection.vue";
+import MusicSection from "./components/MusicSection.vue";
+import { getInitialLocale, messages } from "./lib/translations";
 import { useAuthStore } from "./stores/auth";
 import { usePlayerStore } from "./stores/player";
 
@@ -18,7 +19,9 @@ const { tracks, currentTrack, currentTrackId, isPlaying, currentTime, volume, ca
 const activeMode = ref("music");
 const musicTab = ref("listen");
 const theme = ref(getInitialTheme());
+const locale = ref(getInitialLocale());
 const playerExpanded = ref(false);
+const miniPlayerHidden = ref(false);
 const releases = ref([]);
 const mediaAssets = ref([]);
 const audioRef = ref(null);
@@ -48,12 +51,23 @@ const platformLinks = [
 
 const formattedDuration = computed(() => formatTime(currentTrack.value?.duration ?? 0));
 const formattedTime = computed(() => formatTime(currentTime.value));
+const text = computed(() => messages[locale.value]);
 const progress = computed(() => {
   const duration = currentTrack.value?.duration ?? 0;
   return duration ? Math.min(100, Math.round((currentTime.value / duration) * 100)) : 0;
 });
 const currentRelease = computed(() => releases.value.find((release) => release.tracks?.some((track) => track.id === currentTrackId.value)) ?? releases.value[0] ?? null);
-const currentLyrics = computed(() => currentTrack.value?.lyrics || currentRelease.value?.notes || "No lyrics available yet.");
+const currentLyrics = computed(() => currentTrack.value?.lyrics || currentRelease.value?.notes || text.value.player.noLyrics);
+const playerLabels = computed(() => ({
+  nowPlaying: text.value.player.nowPlaying,
+  noTrackSelected: text.value.player.noTrackSelected,
+  artistName: text.value.app.eyebrow,
+  unreleased: text.value.player.unreleased ?? "Unreleased",
+  releaseLoading: text.value.player.releaseLoading,
+  lyrics: text.value.player.lyrics,
+  queue: text.value.player.queue,
+  selectTrack: text.value.music.listen
+}));
 
 watch(() => currentTrack.value?.streamUrl, (streamUrl) => {
   if (!audioRef.value) return;
@@ -72,9 +86,45 @@ watch(theme, (value) => {
   window.localStorage.setItem("portfolio-theme", value);
 }, { immediate: true });
 
+watch(locale, (value) => {
+  window.localStorage.setItem("portfolio-locale", value);
+}, { immediate: true });
+
+watch(isPlaying, (value) => {
+  if (value) {
+    miniPlayerHidden.value = false;
+  }
+});
+
+let scrollTimeout = null;
+
+function handleMainScroll() {
+  if (!isPlaying.value) return;
+  miniPlayerHidden.value = true;
+  clearTimeout(scrollTimeout);
+  scrollTimeout = window.setTimeout(() => {
+    scrollTimeout = null;
+  }, 120);
+}
+
 onMounted(async () => {
   await auth.hydrate();
   await refreshCatalog();
+  window.addEventListener("scroll", handleMainScroll, { passive: true });
+  window.addEventListener("wheel", handleMainScroll, { passive: true });
+  window.addEventListener("touchmove", handleMainScroll, { passive: true });
+  window.addEventListener("keydown", handleMainScroll);
+});
+
+onBeforeUnmount(() => {
+  audioRef.value?.pause();
+  window.removeEventListener("scroll", handleMainScroll);
+  window.removeEventListener("wheel", handleMainScroll);
+  window.removeEventListener("touchmove", handleMainScroll);
+  window.removeEventListener("keydown", handleMainScroll);
+  if (scrollTimeout) {
+    clearTimeout(scrollTimeout);
+  }
 });
 
 async function refreshCatalog() {
@@ -147,6 +197,14 @@ function openFilePicker() {
 
 function openPlayer() {
   playerExpanded.value = true;
+}
+
+function revealMiniPlayer() {
+  miniPlayerHidden.value = false;
+}
+
+function hideMiniPlayer() {
+  miniPlayerHidden.value = true;
 }
 
 function onFilesSelected(event) {
@@ -298,254 +356,88 @@ function getInitialTheme() {
   return typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 }
 
-onBeforeUnmount(() => audioRef.value?.pause());
+function toggleLocale() {
+  locale.value = locale.value === "en" ? "it" : "en";
+}
+
 </script>
 
 <template>
   <div class="app-shell" :data-mode="activeMode">
     <audio ref="audioRef" preload="metadata" @timeupdate="handleTimeUpdate" @loadedmetadata="handleLoadedMetadata" @ended="player.playNext()" />
 
-    <header class="mode-header">
-      <p class="eyebrow centered">Patrizio Milione</p>
-      <div class="header-controls">
-        <div class="mode-toggle">
-          <button class="mode-option" :class="{ active: activeMode === 'software' }" @click="activeMode = 'software'">Software</button>
-          <button class="mode-option" :class="{ active: activeMode === 'music' }" @click="activeMode = 'music'">Music</button>
-        </div>
-        <button class="theme-toggle" @click="theme = theme === 'dark' ? 'light' : 'dark'">
-          <i :class="theme === 'dark' ? 'pi pi-moon' : 'pi pi-sun'" /> {{ theme === 'dark' ? 'Dark' : 'Light' }} mode
-        </button>
-      </div>
-    </header>
+    <AppHeader
+      :active-mode="activeMode"
+      :theme="theme"
+      :text="text"
+      @update:mode="activeMode = $event"
+      @toggle-theme="theme = theme === 'dark' ? 'light' : 'dark'"
+      @toggle-locale="toggleLocale"
+    />
 
     <section v-if="activeMode === 'software'" class="mode-page">
-      <section class="hero solo-hero">
-        <div class="hero-copy wide-copy">
-          <p class="eyebrow">Software engineer</p>
-          <h1>Frontend and backend now move together.</h1>
-          <p class="hero-text">The music platform has real auth, catalog, releases, and admin endpoints. This frontend is now being shaped around that working backend instead of mock data only.</p>
-        </div>
-      </section>
-      <section class="software-grid">
-        <a v-for="project in softwareProjects" :key="project.title" class="project-card" :href="project.href" target="_blank" rel="noreferrer">
-          <div class="card-icon-wrap"><i :class="project.icon" class="card-icon" /></div>
-          <p class="project-type">{{ project.type }}</p>
-          <h3>{{ project.title }}</h3>
-          <p>{{ project.summary }}</p>
-          <div class="stack-list"><span v-for="item in project.stack" :key="item">{{ item }}</span></div>
-        </a>
-      </section>
+      <SoftwareSection :text="text" :projects="softwareProjects" />
     </section>
 
-    <section v-else class="mode-page music-page">
-      <section class="hero">
-        <div class="hero-copy">
-          <p class="eyebrow">Music platform</p>
-          <h1>Public listening and private creator controls.</h1>
-          <p class="hero-text">Tracks and releases now come from the backend. Playback requests a signed URL. Admin login unlocks content management on the same page.</p>
-          <div class="hero-actions">
-            <button class="action-link action-link-primary" @click="musicTab = 'listen'">Listen</button>
-            <button class="action-link action-link-contrast" @click="musicTab = 'releases'">Releases</button>
-            <button class="action-link action-link-contrast" @click="musicTab = 'admin'">Admin</button>
-            <Button label="Import local tracks" icon="pi pi-upload" text @click="openFilePicker" />
-          </div>
-          <input ref="fileInputRef" class="hidden-input" type="file" accept="audio/*" multiple @change="onFilesSelected" />
-          <p v-if="statusMessage" class="status-message">{{ statusMessage }}</p>
-        </div>
-
-        <Card class="hero-player hero-player-summary">
-          <template #content>
-            <button class="hero-player-launch" @click="openPlayer">
-              <div class="cover-art" :style="{ background: `linear-gradient(135deg, ${currentTrack?.accent?.[0] ?? 'var(--cover-start)'}, ${currentTrack?.accent?.[1] ?? 'var(--cover-mid)'}, ${currentTrack?.accent?.[2] ?? 'var(--cover-end)'})` }">
-                <div class="cover-overlay">
-                  <Tag :value="currentTrack?.mood ?? 'No track'" severity="contrast" />
-                  <div>
-                    <p class="cover-label">Persistent Player</p>
-                    <h2>{{ currentTrack?.title ?? "No track selected" }}</h2>
-                    <p>{{ currentTrack?.artist ?? "Patrizio Milione" }}</p>
-                    <p class="cover-note">{{ currentRelease?.title ?? "Waiting for releases..." }}</p>
-                  </div>
-                </div>
-              </div>
-            </button>
-          </template>
-        </Card>
-      </section>
-
-      <nav class="subnav">
-        <button class="subnav-item" :class="{ active: musicTab === 'listen' }" @click="musicTab = 'listen'"><i class="pi pi-headphones" /><span>Listen</span></button>
-        <button class="subnav-item" :class="{ active: musicTab === 'releases' }" @click="musicTab = 'releases'"><i class="pi pi-disc" /><span>Releases</span></button>
-        <button class="subnav-item" :class="{ active: musicTab === 'admin' }" @click="musicTab = 'admin'"><i class="pi pi-lock" /><span>Admin</span></button>
-      </nav>
-
-      <section v-if="musicTab === 'listen'" class="minimal-music-grid">
-        <Card class="panel listening-panel">
-          <template #title>Catalog</template>
-          <template #content>
-            <div v-if="catalogLoading" class="empty-state">Loading tracks...</div>
-            <div v-else class="track-grid">
-              <button v-for="track in tracks" :key="track.id" class="track-card" :class="{ active: track.id === currentTrackId }" @click="player.selectTrack(track.id)">
-                <div class="track-art" :style="{ backgroundImage: `linear-gradient(135deg, ${track.accent.join(', ')})` }" />
-                <div class="track-copy">
-                  <p class="track-title">{{ track.title }}</p>
-                  <p class="track-meta">{{ track.artist }}</p>
-                </div>
-                <Tag :value="track.visibility" :severity="track.visibility === 'public' ? 'success' : 'warn'" />
-              </button>
-            </div>
-          </template>
-        </Card>
-        <Card class="panel quiet-panel">
-          <template #title>Links</template>
-          <template #content>
-            <div class="platform-list minimal-platform-list">
-              <a v-for="item in platformLinks" :key="item.label" class="platform-card minimal-platform-card" :href="item.href" target="_blank" rel="noreferrer">
-                <strong class="platform-label"><i :class="item.icon" class="section-icon" /><span>{{ item.label }}</span></strong>
-                <span>{{ item.note }}</span>
-              </a>
-            </div>
-          </template>
-        </Card>
-      </section>
-
-      <section v-else-if="musicTab === 'releases'" class="release-grid">
-        <Card v-for="release in releases" :key="release.id" class="panel release-card">
-          <template #title><div class="panel-title"><i class="pi pi-disc section-icon" /><span>{{ release.title }}</span></div></template>
-          <template #content>
-            <p class="release-meta">{{ release.format }} · {{ release.visibility }}</p>
-            <p>{{ release.notes }}</p>
-            <div class="release-track-list">
-              <div v-for="track in release.tracks" :key="track.id" class="release-track-row">
-                <span>{{ track.title }}</span>
-                <button class="text-action" @click="player.selectTrack(track.id)">Cue</button>
-              </div>
-            </div>
-          </template>
-        </Card>
-      </section>
-
-      <section v-else class="admin-grid">
-        <Card class="panel">
-          <template #title><div class="panel-title"><i class="pi pi-user section-icon" /><span>{{ isAuthenticated ? "Admin session" : "Admin login" }}</span></div></template>
-          <template #content>
-            <div v-if="isAuthenticated" class="session-box">
-              <p class="session-name">{{ user?.displayName }}</p>
-              <p class="session-role">{{ user?.email }} · {{ user?.role }}</p>
-              <div class="form-actions">
-                <Button label="Refresh admin data" icon="pi pi-refresh" text @click="refreshAdminData" />
-                <Button label="Logout" icon="pi pi-sign-out" severity="contrast" @click="logout" />
-              </div>
-            </div>
-            <form v-else class="form-grid" @submit.prevent="submitLogin">
-              <label class="form-field"><span>Email</span><input v-model="loginForm.email" type="email" /></label>
-              <label class="form-field"><span>Password</span><input v-model="loginForm.password" type="password" /></label>
-              <p v-if="loginError" class="form-error">{{ loginError }}</p>
-              <Button :label="authLoading ? 'Signing in...' : 'Login'" icon="pi pi-lock-open" :disabled="authLoading" type="submit" />
-            </form>
-          </template>
-        </Card>
-
-        <template v-if="isAdmin">
-          <Card class="panel">
-            <template #title>Media upload</template>
-            <template #content>
-              <div class="form-grid">
-                <label class="form-field">
-                  <span>Category</span>
-                  <select v-model="uploadCategory">
-                    <option value="audio">audio</option>
-                    <option value="artwork">artwork</option>
-                    <option value="misc">misc</option>
-                  </select>
-                </label>
-                <div class="form-actions">
-                  <Button :label="uploadBusy ? 'Uploading...' : 'Upload file'" icon="pi pi-upload" :disabled="uploadBusy" @click="openMediaPicker" />
-                </div>
-                <input ref="mediaFileRef" class="hidden-input" type="file" @change="onMediaSelected" />
-              </div>
-            </template>
-          </Card>
-
-          <Card class="panel">
-            <template #title>Track form</template>
-            <template #content>
-              <form class="form-grid" @submit.prevent="submitTrack">
-                <label class="form-field"><span>Title</span><input v-model="trackForm.title" type="text" /></label>
-                <label class="form-field"><span>Artist</span><input v-model="trackForm.artist" type="text" /></label>
-                <label class="form-field"><span>Mood</span><input v-model="trackForm.mood" type="text" /></label>
-                <label class="form-field"><span>Duration</span><input v-model="trackForm.duration" type="number" min="0" /></label>
-                <label class="form-field"><span>Visibility</span><select v-model="trackForm.visibility"><option value="public">public</option><option value="private">private</option></select></label>
-                <label class="form-field span-full"><span>Storage key</span><input v-model="trackForm.storageKey" type="text" /></label>
-                <label class="form-field span-full"><span>Release label</span><input v-model="trackForm.releaseLabel" type="text" /></label>
-                <div class="form-actions span-full"><Button :label="adminBusy ? 'Saving...' : 'Save track'" icon="pi pi-save" :disabled="adminBusy" type="submit" /></div>
-              </form>
-            </template>
-          </Card>
-
-          <Card class="panel">
-            <template #title>Release form</template>
-            <template #content>
-              <form class="form-grid" @submit.prevent="submitRelease">
-                <label class="form-field"><span>Title</span><input v-model="releaseForm.title" type="text" /></label>
-                <label class="form-field"><span>Slug</span><input v-model="releaseForm.slug" type="text" /></label>
-                <label class="form-field"><span>Format</span><select v-model="releaseForm.format"><option value="single">single</option><option value="ep">ep</option><option value="album">album</option><option value="demo">demo</option></select></label>
-                <label class="form-field"><span>Visibility</span><select v-model="releaseForm.visibility"><option value="public">public</option><option value="private">private</option></select></label>
-                <label class="form-field span-full"><span>Artwork URL</span><input v-model="releaseForm.artworkUrl" type="text" /></label>
-                <label class="form-field span-full"><span>Published at</span><input v-model="releaseForm.publishedAt" type="datetime-local" /></label>
-                <label class="form-field span-full"><span>Track IDs</span><input v-model="releaseForm.trackIds" type="text" /></label>
-                <label class="form-field span-full"><span>Notes</span><textarea v-model="releaseForm.notes" rows="4" /></label>
-                <div class="form-actions span-full"><Button :label="adminBusy ? 'Saving...' : 'Save release'" icon="pi pi-save" :disabled="adminBusy" type="submit" /></div>
-              </form>
-            </template>
-          </Card>
-
-          <Card class="panel span-2">
-            <template #title>Managed content</template>
-            <template #content>
-              <div class="admin-lists">
-                <div>
-                  <p class="admin-list-title">Tracks</p>
-                  <div v-for="track in tracks" :key="track.id" class="admin-item">
-                    <div><strong>{{ track.title }}</strong><p>{{ track.id }} · {{ track.visibility }}</p></div>
-                    <div class="inline-actions"><button class="text-action" @click="editTrack(track)">Edit</button><button class="text-action danger" @click="removeTrack(track.id)">Delete</button></div>
-                  </div>
-                </div>
-                <div>
-                  <p class="admin-list-title">Releases</p>
-                  <div v-for="release in releases" :key="release.id" class="admin-item">
-                    <div><strong>{{ release.title }}</strong><p>{{ release.slug }} · {{ release.format }}</p></div>
-                    <div class="inline-actions"><button class="text-action" @click="editRelease(release)">Edit</button><button class="text-action danger" @click="removeRelease(release.id)">Delete</button></div>
-                  </div>
-                </div>
-                <div>
-                  <p class="admin-list-title">Media assets</p>
-                  <div v-for="asset in mediaAssets" :key="asset.id" class="admin-item">
-                    <div><strong>{{ asset.originalName }}</strong><p>{{ asset.category }} · {{ asset.url }}</p></div>
-                    <div class="inline-actions">
-                      <button class="text-action" @click="trackForm.storageKey = asset.url">Use for track</button>
-                      <button class="text-action" @click="releaseForm.artworkUrl = asset.url">Use for release</button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </template>
-          </Card>
-        </template>
-      </section>
-    </section>
+    <MusicSection
+      v-else
+      :text="text"
+      :music-tab="musicTab"
+      :status-message="statusMessage"
+      :catalog-loading="catalogLoading"
+      :current-track="currentTrack"
+      :current-release="currentRelease"
+      :current-track-id="currentTrackId ?? ''"
+      :tracks="tracks"
+      :releases="releases"
+      :platform-links="platformLinks"
+      :is-authenticated="isAuthenticated"
+      :user="user"
+      :login-error="loginError"
+      :login-form="loginForm"
+      :auth-loading="authLoading"
+      :is-admin="isAdmin"
+      :upload-busy="uploadBusy"
+      :upload-category="uploadCategory"
+      :track-form="trackForm"
+      :release-form="releaseForm"
+      :media-assets="mediaAssets"
+      :admin-busy="adminBusy"
+      :current-lyrics="currentLyrics"
+      @set-tab="musicTab = $event"
+      @open-player="openPlayer"
+      @open-file-picker="openFilePicker"
+      @files-selected="onFilesSelected"
+      @select-track="player.selectTrack($event)"
+      @submit-login="submitLogin"
+      @logout="logout"
+      @refresh-admin="refreshAdminData"
+      @open-media-picker="openMediaPicker"
+      @media-selected="onMediaSelected"
+      @submit-track="submitTrack"
+      @submit-release="submitRelease"
+      @edit-track="editTrack"
+      @edit-release="editRelease"
+      @remove-track="removeTrack"
+      @remove-release="removeRelease"
+    />
 
     <MiniPlayer
-      v-if="activeMode === 'music'"
+      v-if="activeMode === 'music' && isPlaying && currentTrack"
       :track="currentTrack"
       :is-playing="isPlaying"
       :current-time-label="formattedTime"
       :duration-label="formattedDuration"
       :progress="progress"
       :disabled="!canPlayCurrent"
+      :labels="{ noTrackSelected: text.player.noTrackSelected, selectTrack: text.music.listen }"
+      :hidden="miniPlayerHidden"
       @toggle="togglePlayback"
       @next="player.playNext()"
       @previous="player.playPrevious()"
       @expand="openPlayer"
+      @show="revealMiniPlayer"
+      @hide="hideMiniPlayer"
     />
 
     <ExpandedPlayer
@@ -561,6 +453,7 @@ onBeforeUnmount(() => audioRef.value?.pause());
       :duration-label="formattedDuration"
       :queue="tracks"
       :active-track-id="currentTrackId ?? ''"
+      :labels="playerLabels"
       @close="playerExpanded = false"
       @toggle="togglePlayback"
       @next="player.playNext()"
