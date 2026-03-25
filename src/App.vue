@@ -1,5 +1,5 @@
 ﻿<script setup>
-import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
 import { storeToRefs } from "pinia";
 import { api } from "./lib/api";
 import ExpandedPlayer from "./components/player/ExpandedPlayer.vue";
@@ -14,7 +14,18 @@ import { usePlayerStore } from "./stores/player";
 const auth = useAuthStore();
 const player = usePlayerStore();
 const { user, loading: authLoading, isAuthenticated, isAdmin } = storeToRefs(auth);
-const { tracks, currentTrack, currentTrackId, isPlaying, currentTime, volume, canPlayCurrent } = storeToRefs(player);
+const {
+  tracks,
+  queue,
+  currentTrack,
+  currentTrackId,
+  isPlaying,
+  currentTime,
+  volume,
+  shuffleEnabled,
+  repeatMode,
+  canPlayCurrent
+} = storeToRefs(player);
 
 const activeMode = ref("music");
 const theme = ref(getInitialTheme());
@@ -60,6 +71,21 @@ const displayTracks = computed(() => {
       artworkUrl: resolveMediaUrl(release?.artworkUrl ?? ""),
       durationLabel: formatTime(track.duration ?? 0),
       lyrics: track.lyrics || release?.notes || text.value.player.noLyrics
+    };
+  });
+});
+const displayQueue = computed(() => {
+  if (!queue.value.length) {
+    return displayTracks.value;
+  }
+
+  return queue.value.map((track) => {
+    const displayTrack = displayTracks.value.find((item) => item.id === track.id);
+    return displayTrack ?? {
+      ...track,
+      artworkUrl: "",
+      durationLabel: formatTime(track.duration ?? 0),
+      lyrics: track.lyrics || text.value.player.noLyrics
     };
   });
 });
@@ -168,15 +194,9 @@ async function togglePlayback() {
   const track = currentTrack.value;
   if (!audio || !track) return;
   if (audio.paused) {
-    if (!track.streamUrl || !track.streamUrl.startsWith("blob:")) {
-      try {
-        const response = await api.authorizePlayback(track.id);
-        player.setTrackStream(track.id, response.streamUrl);
-      } catch (error) {
-        statusMessage.value = error.message;
-        return;
-      }
-    }
+    const readyTrack = await ensureTrackIsPlayable(track.id);
+    if (!readyTrack) return;
+
     try {
       await audio.play();
       player.setPlaying(true);
@@ -191,6 +211,67 @@ async function togglePlayback() {
   }
   audio.pause();
   player.setPlaying(false);
+}
+
+async function startPlaybackForTrack(trackId, { openExpanded = false, toggleCurrent = true } = {}) {
+  if (!trackId || !audioRef.value) {
+    return;
+  }
+
+  if (openExpanded) {
+    playerExpanded.value = true;
+  }
+
+  const isCurrentTrack = trackId === currentTrackId.value;
+  if (isCurrentTrack && toggleCurrent) {
+    await togglePlayback();
+    return;
+  }
+
+  const readyTrack = await ensureTrackIsPlayable(trackId);
+  if (!readyTrack) {
+    return;
+  }
+
+  try {
+    await audioRef.value.play();
+    player.setPlaying(true);
+  } catch (error) {
+    if (error?.name === "AbortError") {
+      return;
+    }
+    statusMessage.value = error.message;
+    player.setPlaying(false);
+  }
+}
+
+async function ensureTrackIsPlayable(trackId) {
+  if (!trackId) {
+    return null;
+  }
+
+  if (currentTrackId.value !== trackId) {
+    player.selectTrack(trackId);
+    await nextTick();
+  }
+
+  const track = currentTrack.value;
+  if (!track) {
+    return null;
+  }
+
+  if (!track.streamUrl || !track.streamUrl.startsWith("blob:")) {
+    try {
+      const response = await api.authorizePlayback(track.id);
+      player.setTrackStream(track.id, response.streamUrl);
+      await nextTick();
+    } catch (error) {
+      statusMessage.value = error.message;
+      return null;
+    }
+  }
+
+  return currentTrack.value;
 }
 
 function handleTimeUpdate() {
@@ -231,15 +312,95 @@ function selectPlaybackTrack(id) {
 }
 
 async function toggleTrackFromList(id) {
-  if (id !== currentTrackId.value) {
-    player.selectTrack(id);
-    playerExpanded.value = true;
-    await togglePlayback();
+  await startPlaybackForTrack(id, { openExpanded: true, toggleCurrent: true });
+}
+
+async function selectQueueTrack(id) {
+  await startPlaybackForTrack(id, { openExpanded: false, toggleCurrent: false });
+}
+
+async function handleNext() {
+  const action = player.playNext();
+  if (!audioRef.value) {
     return;
   }
 
-  playerExpanded.value = true;
-  await togglePlayback();
+  if (action === "restart") {
+    audioRef.value.currentTime = 0;
+    player.setCurrentTime(0);
+    await startPlaybackForTrack(currentTrackId.value, { toggleCurrent: false });
+    return;
+  }
+
+  if (action === "next") {
+    await startPlaybackForTrack(currentTrackId.value, { toggleCurrent: false });
+    return;
+  }
+
+  if (action === "stop") {
+    audioRef.value.pause();
+    audioRef.value.currentTime = 0;
+    player.setPlaying(false);
+    player.setCurrentTime(0);
+  }
+}
+
+async function handlePrevious() {
+  const action = player.playPrevious({
+    currentTime: audioRef.value?.currentTime ?? currentTime.value,
+    restartThreshold: 3
+  });
+
+  if (!audioRef.value) {
+    return;
+  }
+
+  if (action === "restart") {
+    audioRef.value.currentTime = 0;
+    player.setCurrentTime(0);
+    if (isPlaying.value) {
+      try {
+        await audioRef.value.play();
+        player.setPlaying(true);
+      } catch (error) {
+        if (error?.name !== "AbortError") {
+          statusMessage.value = error.message;
+          player.setPlaying(false);
+        }
+      }
+    }
+    return;
+  }
+
+  if (action === "previous") {
+    await startPlaybackForTrack(currentTrackId.value, { toggleCurrent: false });
+  }
+}
+
+async function handleTrackEnded() {
+  const action = player.handleTrackEnded();
+  if (!audioRef.value) {
+    return;
+  }
+
+  if (action === "restart") {
+    audioRef.value.currentTime = 0;
+    player.setCurrentTime(0);
+    await startPlaybackForTrack(currentTrackId.value, { toggleCurrent: false });
+    return;
+  }
+
+  if (action === "next") {
+    await startPlaybackForTrack(currentTrackId.value, { toggleCurrent: false });
+    return;
+  }
+
+  if (action === "stop") {
+    audioRef.value.pause();
+    audioRef.value.currentTime = 0;
+    player.setPlaying(false);
+    player.setCurrentTime(0);
+  }
 }
 
 function onFilesSelected(event) {
@@ -437,7 +598,7 @@ function toggleLocale() {
 
 <template>
   <div class="app-shell" :data-mode="activeMode">
-    <audio ref="audioRef" preload="metadata" @timeupdate="handleTimeUpdate" @loadedmetadata="handleLoadedMetadata" @ended="player.playNext()" />
+    <audio ref="audioRef" preload="metadata" @timeupdate="handleTimeUpdate" @loadedmetadata="handleLoadedMetadata" @ended="handleTrackEnded" />
 
     <AppHeader
       :active-mode="activeMode"
@@ -474,8 +635,8 @@ function toggleLocale() {
       :labels="{ noTrackSelected: text.player.noTrackSelected, selectTrack: text.music.listen }"
       :hidden="miniPlayerHidden"
       @toggle="togglePlayback"
-      @next="player.playNext()"
-      @previous="player.playPrevious()"
+      @next="handleNext"
+      @previous="handlePrevious"
       @expand="playerExpanded = true"
       @show="revealMiniPlayer"
       @hide="hideMiniPlayer"
@@ -492,16 +653,20 @@ function toggleLocale() {
       :progress="progress"
       :current-time-label="formattedTime"
       :duration-label="formattedDuration"
-      :queue="displayTracks"
+      :queue="displayQueue"
       :active-track-id="currentTrackId ?? ''"
+      :shuffle-enabled="shuffleEnabled"
+      :repeat-mode="repeatMode"
       :labels="playerLabels"
       @close="playerExpanded = false"
       @toggle="togglePlayback"
-      @next="player.playNext()"
-      @previous="player.playPrevious()"
+      @next="handleNext"
+      @previous="handlePrevious"
+      @toggle-shuffle="player.toggleShuffle()"
+      @cycle-repeat="player.cycleRepeatMode()"
       @volume-change="player.setVolume($event)"
       @seek="seekTrack"
-      @select-track="selectPlaybackTrack"
+      @select-track="selectQueueTrack"
     />
   </div>
 </template>

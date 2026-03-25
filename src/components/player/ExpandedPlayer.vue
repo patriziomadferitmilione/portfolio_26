@@ -47,6 +47,14 @@ defineProps({
     type: String,
     default: ""
   },
+  shuffleEnabled: {
+    type: Boolean,
+    default: false
+  },
+  repeatMode: {
+    type: String,
+    default: "off"
+  },
   lyrics: {
     type: String,
     default: ""
@@ -62,6 +70,8 @@ defineEmits([
   "toggle",
   "next",
   "previous",
+  "toggle-shuffle",
+  "cycle-repeat",
   "volume-change",
   "seek",
   "select-track"
@@ -109,7 +119,13 @@ defineEmits([
             </div>
 
             <div class="control-row expanded">
-              <Button icon="pi pi-shuffle" text rounded />
+              <Button
+                icon="pi pi-shuffle"
+                text
+                rounded
+                :class="{ active: shuffleEnabled }"
+                @click="$emit('toggle-shuffle')"
+              />
               <Button icon="pi pi-step-backward" text rounded @click="$emit('previous')" />
               <Button
                 :icon="isPlaying ? 'pi pi-pause' : 'pi pi-play'"
@@ -119,7 +135,13 @@ defineEmits([
                 @click="$emit('toggle')"
               />
               <Button icon="pi pi-step-forward" text rounded @click="$emit('next')" />
-              <Button icon="pi pi-replay" text rounded />
+              <Button
+                :icon="repeatMode === 'one' ? 'pi pi-replay' : 'pi pi-refresh'"
+                text
+                rounded
+                :class="{ active: repeatMode !== 'off' }"
+                @click="$emit('cycle-repeat')"
+              />
             </div>
 
             <div class="volume-row">

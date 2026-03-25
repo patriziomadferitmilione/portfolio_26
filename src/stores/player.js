@@ -25,19 +25,33 @@ function normalizeTrack(track, index = 0) {
 
 export const usePlayerStore = defineStore("player", () => {
   const tracks = ref([]);
+  const queueOrder = ref([]);
+  const history = ref([]);
   const currentTrackId = ref(null);
   const isPlaying = ref(false);
   const currentTime = ref(0);
   const volume = ref(80);
+  const shuffleEnabled = ref(false);
+  const repeatMode = ref("off");
 
   const currentTrack = computed(
     () => tracks.value.find((track) => track.id === currentTrackId.value) ?? null
+  );
+  const queue = computed(() => {
+    const trackMap = new Map(tracks.value.map((track) => [track.id, track]));
+    const ordered = queueOrder.value.map((id) => trackMap.get(id)).filter(Boolean);
+    const missing = tracks.value.filter((track) => !queueOrder.value.includes(track.id));
+    return [...ordered, ...missing];
+  });
+  const currentQueueIndex = computed(
+    () => queue.value.findIndex((track) => track.id === currentTrackId.value)
   );
 
   const canPlayCurrent = computed(() => Boolean(currentTrack.value));
 
   function setTracks(items) {
     tracks.value = items.map(normalizeTrack);
+    syncQueueOrder();
     if (!tracks.value.find((track) => track.id === currentTrackId.value)) {
       currentTrackId.value = tracks.value[0]?.id ?? null;
     }
@@ -59,10 +73,14 @@ export const usePlayerStore = defineStore("player", () => {
     if (!currentTrackId.value) {
       currentTrackId.value = normalized.id;
     }
+
+    syncQueueOrder();
   }
 
   function removeTrack(trackId) {
     tracks.value = tracks.value.filter((track) => track.id !== trackId);
+    queueOrder.value = queueOrder.value.filter((id) => id !== trackId);
+    history.value = history.value.filter((id) => id !== trackId);
     if (currentTrackId.value === trackId) {
       currentTrackId.value = tracks.value[0]?.id ?? null;
       currentTime.value = 0;
@@ -80,7 +98,10 @@ export const usePlayerStore = defineStore("player", () => {
     tracks.value = [...tracks.value];
   }
 
-  function selectTrack(id) {
+  function selectTrack(id, { pushHistory = true } = {}) {
+    if (pushHistory && currentTrackId.value && currentTrackId.value !== id) {
+      history.value = [...history.value, currentTrackId.value];
+    }
     currentTrackId.value = id;
     currentTime.value = 0;
   }
@@ -98,25 +119,110 @@ export const usePlayerStore = defineStore("player", () => {
   }
 
   function playNext() {
-    if (!tracks.value.length) {
-      return;
+    if (!queue.value.length) {
+      return "none";
     }
 
-    const currentIndex = tracks.value.findIndex((track) => track.id === currentTrackId.value);
-    const nextIndex = currentIndex >= 0 ? (currentIndex + 1) % tracks.value.length : 0;
-    currentTrackId.value = tracks.value[nextIndex].id;
-    currentTime.value = 0;
+    if (repeatMode.value === "one" && currentTrackId.value) {
+      currentTime.value = 0;
+      return "restart";
+    }
+
+    const currentIndex = currentQueueIndex.value;
+    if (currentIndex === -1) {
+      currentTrackId.value = queue.value[0]?.id ?? null;
+      currentTime.value = 0;
+      return currentTrackId.value ? "next" : "none";
+    }
+
+    const nextIndex = currentIndex + 1;
+    if (nextIndex >= queue.value.length) {
+      if (repeatMode.value === "all") {
+        selectTrack(queue.value[0].id);
+        return "next";
+      }
+
+      isPlaying.value = false;
+      currentTime.value = 0;
+      return "stop";
+    }
+
+    selectTrack(queue.value[nextIndex].id);
+    return "next";
   }
 
-  function playPrevious() {
-    if (!tracks.value.length) {
+  function playPrevious({ currentTime: elapsed = 0, restartThreshold = 3 } = {}) {
+    if (!queue.value.length || !currentTrackId.value) {
+      return "none";
+    }
+
+    if (elapsed > restartThreshold) {
+      currentTime.value = 0;
+      return "restart";
+    }
+
+    const previousTrackId = history.value.at(-1);
+    if (previousTrackId && queue.value.some((track) => track.id === previousTrackId)) {
+      history.value = history.value.slice(0, -1);
+      currentTrackId.value = previousTrackId;
+      currentTime.value = 0;
+      return "previous";
+    }
+
+    const currentIndex = currentQueueIndex.value;
+    if (currentIndex > 0) {
+      currentTrackId.value = queue.value[currentIndex - 1].id;
+      currentTime.value = 0;
+      return "previous";
+    }
+
+    currentTime.value = 0;
+    return "restart";
+  }
+
+  function toggleShuffle() {
+    shuffleEnabled.value = !shuffleEnabled.value;
+    syncQueueOrder();
+  }
+
+  function cycleRepeatMode() {
+    repeatMode.value = repeatMode.value === "off"
+      ? "all"
+      : repeatMode.value === "all"
+        ? "one"
+        : "off";
+  }
+
+  function syncQueueOrder() {
+    const ids = tracks.value.map((track) => track.id);
+
+    if (!ids.length) {
+      queueOrder.value = [];
       return;
     }
 
-    const currentIndex = tracks.value.findIndex((track) => track.id === currentTrackId.value);
-    const previousIndex = currentIndex > 0 ? currentIndex - 1 : tracks.value.length - 1;
-    currentTrackId.value = tracks.value[previousIndex].id;
-    currentTime.value = 0;
+    if (!shuffleEnabled.value) {
+      queueOrder.value = ids;
+      return;
+    }
+
+    const currentId = currentTrackId.value && ids.includes(currentTrackId.value)
+      ? currentTrackId.value
+      : ids[0];
+    const rest = ids.filter((id) => id !== currentId);
+    shuffleArray(rest);
+    queueOrder.value = [currentId, ...rest];
+  }
+
+  function shuffleArray(items) {
+    for (let index = items.length - 1; index > 0; index -= 1) {
+      const randomIndex = Math.floor(Math.random() * (index + 1));
+      [items[index], items[randomIndex]] = [items[randomIndex], items[index]];
+    }
+  }
+
+  function handleTrackEnded() {
+    return playNext();
   }
 
   function importLocalFiles(files) {
@@ -137,21 +243,27 @@ export const usePlayerStore = defineStore("player", () => {
     );
 
     tracks.value = [...imported, ...tracks.value];
+    syncQueueOrder();
 
     if (imported[0]) {
       currentTrackId.value = imported[0].id;
       currentTime.value = 0;
       isPlaying.value = false;
+      history.value = [];
     }
   }
 
   return {
     tracks,
+    queue,
     currentTrack,
     currentTrackId,
+    currentQueueIndex,
     isPlaying,
     currentTime,
     volume,
+    shuffleEnabled,
+    repeatMode,
     canPlayCurrent,
     setTracks,
     upsertTrack,
@@ -163,6 +275,9 @@ export const usePlayerStore = defineStore("player", () => {
     setVolume,
     playNext,
     playPrevious,
+    toggleShuffle,
+    cycleRepeatMode,
+    handleTrackEnded,
     importLocalFiles
   };
 });
