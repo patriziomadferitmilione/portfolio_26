@@ -17,7 +17,6 @@ const { user, loading: authLoading, isAuthenticated, isAdmin } = storeToRefs(aut
 const { tracks, currentTrack, currentTrackId, isPlaying, currentTime, volume, canPlayCurrent } = storeToRefs(player);
 
 const activeMode = ref("music");
-const musicTab = ref("listen");
 const theme = ref(getInitialTheme());
 const locale = ref(getInitialLocale());
 const playerExpanded = ref(false);
@@ -38,26 +37,39 @@ const loginForm = reactive({ email: "", password: "" });
 const trackForm = reactive(emptyTrack());
 const releaseForm = reactive(emptyRelease());
 
-const softwareProjects = [
-  { title: "portfolio_26", type: "Frontend", icon: "pi pi-desktop", summary: "Public site and admin surface.", stack: ["Vue", "Pinia", "PrimeVue"], href: "https://github.com/patriziomadferitmilione/portfolio_26" },
-  { title: "portolio_26_be", type: "Backend", icon: "pi pi-server", summary: "Auth, tracks, releases, and playback authorization.", stack: ["Fastify", "Drizzle", "SQLite/Postgres"], href: "https://github.com/patriziomadferitmilione/portolio_26_be" }
-];
-
-const platformLinks = [
-  { label: "SoundCloud", icon: "pi pi-volume-up", href: "https://soundcloud.com/patrizio-milione", note: "Current uploads and drafts" },
-  { label: "Apple Music", icon: "pi pi-headphones", href: "https://music.apple.com/us/artist/patrizio-milione/1535385820", note: "Published releases" },
-  { label: "Local API", icon: "pi pi-link", href: "http://localhost:4200/api/health", note: "Backend health and data endpoints" }
+const musicDemoTracks = [
+  createDemoTrack("vinegar", "Vinegar", "Patrizio Milione", "Vinegar", 170, ["#d9471e", "#401a14"]),
+  createDemoTrack("soda-and-lime", "Soda & Lime", "Patrizio Milione feat. Ryota Saito", "Soda & Lime", 235, ["#ff8a3d", "#6e2416"]),
+  createDemoTrack("but-then-comes-the-night", "But Then Comes the Night", "Patrizio Milione", "But Then Comes the Night", 180, ["#cb5a2b", "#23181f"])
 ];
 
 const formattedDuration = computed(() => formatTime(currentTrack.value?.duration ?? 0));
 const formattedTime = computed(() => formatTime(currentTime.value));
 const text = computed(() => messages[locale.value]);
+const displayTracks = computed(() => {
+  if (!tracks.value.length) {
+    return musicDemoTracks;
+  }
+
+  return tracks.value.map((track) => {
+    const release = releases.value.find((item) => item.tracks?.some((releaseTrack) => releaseTrack.id === track.id));
+
+    return {
+      ...track,
+      releaseTitle: release?.title ?? track.releaseLabel,
+      artworkUrl: resolveMediaUrl(release?.artworkUrl ?? ""),
+      durationLabel: formatTime(track.duration ?? 0),
+      lyrics: track.lyrics || release?.notes || text.value.player.noLyrics
+    };
+  });
+});
 const progress = computed(() => {
   const duration = currentTrack.value?.duration ?? 0;
   return duration ? Math.min(100, Math.round((currentTime.value / duration) * 100)) : 0;
 });
 const currentRelease = computed(() => releases.value.find((release) => release.tracks?.some((track) => track.id === currentTrackId.value)) ?? releases.value[0] ?? null);
 const currentLyrics = computed(() => currentTrack.value?.lyrics || currentRelease.value?.notes || text.value.player.noLyrics);
+const displayCurrentTrack = computed(() => displayTracks.value.find((track) => track.id === currentTrackId.value) ?? null);
 const playerLabels = computed(() => ({
   nowPlaying: text.value.player.nowPlaying,
   noTrackSelected: text.value.player.noTrackSelected,
@@ -108,7 +120,6 @@ function handleMainScroll() {
 }
 
 onMounted(async () => {
-  await auth.hydrate();
   await refreshCatalog();
   window.addEventListener("scroll", handleMainScroll, { passive: true });
   window.addEventListener("wheel", handleMainScroll, { passive: true });
@@ -166,8 +177,16 @@ async function togglePlayback() {
         return;
       }
     }
-    await audio.play();
-    player.setPlaying(true);
+    try {
+      await audio.play();
+      player.setPlaying(true);
+    } catch (error) {
+      if (error?.name === "AbortError") {
+        return;
+      }
+      statusMessage.value = error.message;
+      player.setPlaying(false);
+    }
     return;
   }
   audio.pause();
@@ -207,6 +226,22 @@ function hideMiniPlayer() {
   miniPlayerHidden.value = true;
 }
 
+function selectPlaybackTrack(id) {
+  player.selectTrack(id);
+}
+
+async function toggleTrackFromList(id) {
+  if (id !== currentTrackId.value) {
+    player.selectTrack(id);
+    playerExpanded.value = true;
+    await togglePlayback();
+    return;
+  }
+
+  playerExpanded.value = true;
+  await togglePlayback();
+}
+
 function onFilesSelected(event) {
   const files = event.target.files;
   if (!files?.length) return;
@@ -219,7 +254,6 @@ async function submitLogin() {
   try {
     await auth.login(loginForm);
     await refreshAdminData();
-    musicTab.value = "admin";
     loginForm.email = "";
     loginForm.password = "";
   } catch (error) {
@@ -343,6 +377,45 @@ function emptyRelease() {
   return { id: "", title: "", slug: "", format: "single", visibility: "public", artworkUrl: "/artwork/placeholder.jpg", notes: "", publishedAt: "", trackIds: "" };
 }
 
+function createDemoTrack(id, title, artist, releaseTitle, duration, colors) {
+  return {
+    id,
+    title,
+    artist,
+    releaseTitle,
+    duration,
+    durationLabel: formatTime(duration),
+    accent: colors,
+    artworkUrl: "",
+    lyrics: createDemoLyrics(title)
+  };
+}
+
+function createDemoLyrics(title) {
+  return [
+    `${title} in the rearview, flicker in the glass`,
+    "Late train breathing through the avenue",
+    "Streetlight halo on a navy coat",
+    "Hold the note until the skyline moves",
+    "Every small delay becomes a rhythm",
+    "Every quiet room keeps the echo warm"
+  ].join("\n");
+}
+
+function resolveMediaUrl(value) {
+  if (!value) {
+    return "";
+  }
+
+  if (/^https?:\/\//i.test(value) || value.startsWith("data:")) {
+    return value;
+  }
+
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:4200/api";
+  const backendOrigin = apiBaseUrl.replace(/\/api\/?$/, "");
+  return `${backendOrigin}${value.startsWith("/") ? value : `/${value}`}`;
+}
+
 function formatTime(value) {
   if (!Number.isFinite(value) || value <= 0) return "0:00";
   const minutes = Math.floor(value / 60);
@@ -376,55 +449,23 @@ function toggleLocale() {
     />
 
     <section v-if="activeMode === 'software'" class="mode-page">
-      <SoftwareSection :text="text" :projects="softwareProjects" />
+      <SoftwareSection :text="text" />
     </section>
 
     <MusicSection
       v-else
       :text="text"
-      :music-tab="musicTab"
-      :status-message="statusMessage"
       :catalog-loading="catalogLoading"
-      :current-track="currentTrack"
-      :current-release="currentRelease"
       :current-track-id="currentTrackId ?? ''"
-      :tracks="tracks"
-      :releases="releases"
-      :platform-links="platformLinks"
-      :is-authenticated="isAuthenticated"
-      :user="user"
-      :login-error="loginError"
-      :login-form="loginForm"
-      :auth-loading="authLoading"
-      :is-admin="isAdmin"
-      :upload-busy="uploadBusy"
-      :upload-category="uploadCategory"
-      :track-form="trackForm"
-      :release-form="releaseForm"
-      :media-assets="mediaAssets"
-      :admin-busy="adminBusy"
-      :current-lyrics="currentLyrics"
-      @set-tab="musicTab = $event"
-      @open-player="openPlayer"
-      @open-file-picker="openFilePicker"
-      @files-selected="onFilesSelected"
-      @select-track="player.selectTrack($event)"
-      @submit-login="submitLogin"
-      @logout="logout"
-      @refresh-admin="refreshAdminData"
-      @open-media-picker="openMediaPicker"
-      @media-selected="onMediaSelected"
-      @submit-track="submitTrack"
-      @submit-release="submitRelease"
-      @edit-track="editTrack"
-      @edit-release="editRelease"
-      @remove-track="removeTrack"
-      @remove-release="removeRelease"
+      :is-playing="isPlaying"
+      :tracks="displayTracks"
+      @select-track="selectPlaybackTrack"
+      @toggle-track="toggleTrackFromList"
     />
 
     <MiniPlayer
-      v-if="activeMode === 'music' && isPlaying && currentTrack"
-      :track="currentTrack"
+      v-if="activeMode === 'music' && currentTrack"
+      :track="displayCurrentTrack ?? currentTrack"
       :is-playing="isPlaying"
       :current-time-label="formattedTime"
       :duration-label="formattedDuration"
@@ -435,14 +476,14 @@ function toggleLocale() {
       @toggle="togglePlayback"
       @next="player.playNext()"
       @previous="player.playPrevious()"
-      @expand="openPlayer"
+      @expand="playerExpanded = true"
       @show="revealMiniPlayer"
       @hide="hideMiniPlayer"
     />
 
     <ExpandedPlayer
       :open="playerExpanded"
-      :track="currentTrack"
+      :track="displayCurrentTrack ?? currentTrack"
       :release-title="currentRelease?.title ?? ''"
       :lyrics="currentLyrics"
       :is-playing="isPlaying"
@@ -451,7 +492,7 @@ function toggleLocale() {
       :progress="progress"
       :current-time-label="formattedTime"
       :duration-label="formattedDuration"
-      :queue="tracks"
+      :queue="displayTracks"
       :active-track-id="currentTrackId ?? ''"
       :labels="playerLabels"
       @close="playerExpanded = false"
@@ -460,7 +501,7 @@ function toggleLocale() {
       @previous="player.playPrevious()"
       @volume-change="player.setVolume($event)"
       @seek="seekTrack"
-      @select-track="player.selectTrack($event)"
+      @select-track="selectPlaybackTrack"
     />
   </div>
 </template>

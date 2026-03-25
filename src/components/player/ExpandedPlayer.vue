@@ -1,8 +1,6 @@
 <script setup>
 import Button from "primevue/button";
-import ProgressBar from "primevue/progressbar";
 import Slider from "primevue/slider";
-import Tag from "primevue/tag";
 
 defineProps({
   open: {
@@ -77,89 +75,95 @@ defineEmits([
 
       <section class="player-sheet-panel">
         <div class="player-sheet-header">
-          <div>
-            <p class="eyebrow">{{ labels.nowPlaying }}</p>
+          <Button icon="pi pi-angle-left" text rounded @click="$emit('close')" />
+          <Button icon="pi pi-ellipsis-h" text rounded />
+        </div>
+
+        <div class="player-sheet-stage">
+          <div
+            class="player-sheet-art"
+            :style="{
+              backgroundImage: track?.artworkUrl
+                ? `url(${track.artworkUrl})`
+                : `linear-gradient(135deg, ${(track?.accent ?? ['var(--cover-start)', 'var(--cover-mid)', 'var(--cover-end)']).join(', ')})`
+            }"
+          />
+
+          <div class="player-sheet-copy">
             <h2>{{ track?.title ?? labels.noTrackSelected }}</h2>
             <p class="player-sheet-subtitle">{{ track?.artist ?? labels.artistName }}</p>
           </div>
+
+          <div class="player-sheet-body">
+            <input
+              class="timeline"
+              type="range"
+              min="0"
+              max="100"
+              :value="progress"
+              @input="$emit('seek', $event)"
+            />
+            <div class="time-row">
+              <span>{{ currentTimeLabel }}</span>
+              <span>{{ durationLabel }}</span>
+            </div>
+
+            <div class="control-row expanded">
+              <Button icon="pi pi-shuffle" text rounded />
+              <Button icon="pi pi-step-backward" text rounded @click="$emit('previous')" />
+              <Button
+                :icon="isPlaying ? 'pi pi-pause' : 'pi pi-play'"
+                rounded
+                size="large"
+                :disabled="!canPlay"
+                @click="$emit('toggle')"
+              />
+              <Button icon="pi pi-step-forward" text rounded @click="$emit('next')" />
+              <Button icon="pi pi-replay" text rounded />
+            </div>
+
+            <div class="volume-row">
+              <i class="pi pi-volume-up" />
+              <Slider :model-value="volume" @update:model-value="$emit('volume-change', $event)" />
+            </div>
+          </div>
+        </div>
+
+        <div class="player-sheet-lyrics-header">
+          <p class="eyebrow">{{ labels.lyrics }}</p>
           <Button icon="pi pi-times" text rounded @click="$emit('close')" />
         </div>
 
-        <div class="player-sheet-grid">
-          <div class="player-sheet-stage">
+        <div class="lyrics-panel" v-if="lyrics">
+          <div class="lyrics-body">{{ lyrics }}</div>
+        </div>
+
+        <div class="player-sheet-queue-header">
+          <p class="eyebrow">{{ labels.queue }}</p>
+          <span>{{ queue.length }} tracks</span>
+        </div>
+
+        <div class="player-sheet-queue-list">
+          <button
+            v-for="item in queue"
+            :key="item.id"
+            class="player-sheet-queue-item"
+            :class="{ active: item.id === activeTrackId }"
+            @click="$emit('select-track', item.id)"
+          >
             <div
-              class="player-sheet-art"
-              :style="{ backgroundImage: `linear-gradient(135deg, ${(track?.accent ?? ['var(--cover-start)', 'var(--cover-mid)', 'var(--cover-end)']).join(', ')})` }"
-            >
-              <div class="player-sheet-overlay">
-                <Tag :value="track?.mood ?? labels.unreleased" severity="contrast" />
-                <p>{{ releaseTitle || labels.releaseLoading }}</p>
-              </div>
+              class="player-sheet-queue-art"
+              :style="{
+                backgroundImage: item.artworkUrl
+                  ? `url(${item.artworkUrl})`
+                  : `linear-gradient(135deg, ${item.accent.join(', ')})`
+              }"
+            />
+            <div>
+              <p>{{ item.title }}</p>
+              <span>{{ item.artist }}</span>
             </div>
-
-            <div class="player-sheet-body">
-              <div class="time-row">
-                <span>{{ currentTimeLabel }}</span>
-                <span>{{ durationLabel }}</span>
-              </div>
-              <input
-                class="timeline"
-                type="range"
-                min="0"
-                max="100"
-                :value="progress"
-                @input="$emit('seek', $event)"
-              />
-              <ProgressBar :value="progress" :showValue="false" class="progress" />
-
-              <div class="control-row">
-                <Button icon="pi pi-step-backward" text rounded @click="$emit('previous')" />
-                <Button
-                  :icon="isPlaying ? 'pi pi-pause' : 'pi pi-play'"
-                  rounded
-                  size="large"
-                  :disabled="!canPlay"
-                  @click="$emit('toggle')"
-                />
-                <Button icon="pi pi-step-forward" text rounded @click="$emit('next')" />
-              </div>
-
-              <div class="volume-row">
-                <i class="pi pi-volume-up" />
-                <Slider :model-value="volume" @update:model-value="$emit('volume-change', $event)" />
-              </div>
-              <div class="lyrics-panel" v-if="lyrics">
-                <p class="eyebrow">{{ labels.lyrics }}</p>
-                <div class="lyrics-body">{{ lyrics }}</div>
-              </div>
-            </div>
-          </div>
-
-          <aside class="player-sheet-queue">
-            <div class="player-sheet-queue-header">
-              <p class="eyebrow">{{ labels.queue }}</p>
-              <span>{{ queue.length }} tracks</span>
-            </div>
-
-            <div class="player-sheet-queue-list">
-              <button
-                v-for="item in queue"
-                :key="item.id"
-                class="player-sheet-queue-item"
-                :class="{ active: item.id === activeTrackId }"
-                @click="$emit('select-track', item.id)"
-              >
-                <div
-                  class="player-sheet-queue-art"
-                  :style="{ backgroundImage: `linear-gradient(135deg, ${item.accent.join(', ')})` }"
-                />
-                <div>
-                  <p>{{ item.title }}</p>
-                  <span>{{ item.artist }}</span>
-                </div>
-              </button>
-            </div>
-          </aside>
+          </button>
         </div>
       </section>
     </div>

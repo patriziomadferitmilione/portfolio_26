@@ -68,14 +68,13 @@ function onTouchEnd(event) {
       @touchstart.passive="onTouchStart"
       @touchend.passive="onTouchEnd"
     >
+      <div class="mini-player-art-wrap">
+        <img v-if="track?.artworkUrl" :src="track.artworkUrl" :alt="`${track?.title} cover`" class="mini-player-art" />
+        <div v-else class="mini-player-art mini-player-art-fallback" :style="{ backgroundImage: `linear-gradient(135deg, ${(track?.accent ?? []).join(', ')})` }" />
+      </div>
       <div class="mini-player-copy">
         <p class="mini-player-title">{{ track?.title ?? labels.noTrackSelected }}</p>
         <p class="mini-player-meta">{{ track?.artist ?? labels.selectTrack }}</p>
-      </div>
-      <div class="mini-player-spacer" />
-      <div class="mini-player-time">
-        <span>{{ currentTimeLabel }}</span>
-        <span>{{ durationLabel }}</span>
       </div>
     </button>
 
@@ -90,8 +89,14 @@ function onTouchEnd(event) {
       <Button icon="pi pi-step-forward" text rounded @click="$emit('next')" />
     </div>
 
-    <div class="mini-player-progress">
-      <span :style="{ width: `${progress}%` }" />
+    <div class="mini-player-progress-wrap">
+      <div class="mini-player-time">
+        <span>{{ currentTimeLabel }}</span>
+        <span>{{ durationLabel }}</span>
+      </div>
+      <div class="mini-player-progress">
+        <span :style="{ width: `${progress}%` }" />
+      </div>
     </div>
   </div>
 </template>

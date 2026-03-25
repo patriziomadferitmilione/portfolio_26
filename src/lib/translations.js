@@ -15,9 +15,10 @@ export const messages = {
     },
     software: {
       eyebrow: "Software engineer",
-      heading: "Frontend and backend now move together.",
+      heading: "Work in progress.",
       summary:
-        "The music platform has real auth, catalog, releases, and admin endpoints. This frontend is now being shaped around that working backend instead of mock data only."
+        "The software side is being rebuilt. For now, the best entry points are my LinkedIn and GitHub profiles.",
+      status: "Software section in progress"
     },
     music: {
       eyebrow: "Music platform",
@@ -30,6 +31,9 @@ export const messages = {
       importTracks: "Import local tracks",
       loadingTracks: "Loading tracks...",
       catalog: "Catalog",
+      songs: "songs",
+      ascending: "Ascending",
+      selected: "Selected",
       links: "Links",
       cue: "Cue"
     },
@@ -113,9 +117,10 @@ export const messages = {
     },
     software: {
       eyebrow: "Ingegnere software",
-      heading: "Frontend e backend ora lavorano insieme.",
+      heading: "Work in progress.",
       summary:
-        "La piattaforma musicale ha auth reale, catalogo, release ed endpoint admin. Questo frontend viene ora modellato su quel backend funzionante, non solo su dati finti."
+        "La parte software Ã¨ in fase di ricostruzione. Per ora, i punti di accesso migliori sono i miei profili LinkedIn e GitHub.",
+      status: "Sezione software in lavorazione"
     },
     music: {
       eyebrow: "Piattaforma musicale",
@@ -128,6 +133,9 @@ export const messages = {
       importTracks: "Importa tracce locali",
       loadingTracks: "Caricamento tracce...",
       catalog: "Catalogo",
+      songs: "brani",
+      ascending: "Crescente",
+      selected: "Selezionato",
       links: "Link",
       cue: "Avvia"
     },
