@@ -6,11 +6,15 @@ async function request(path, options = {}) {
     ? {}
     : { "Content-Type": "application/json" };
 
+  // Get access code from localStorage for frontend-only auth
+  const accessCode = localStorage.getItem("portfolio_access_code");
+
   const response = await fetch(`${API_BASE_URL}${path}`, {
     credentials: "include",
     headers: {
       ...defaultHeaders,
-      ...(options.headers ?? {})
+      ...(options.headers ?? {}),
+      ...(accessCode ? { "X-Access-Code": accessCode } : {})
     },
     ...options
   });

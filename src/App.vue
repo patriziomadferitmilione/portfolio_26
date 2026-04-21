@@ -7,6 +7,9 @@ import MiniPlayer from "./components/player/MiniPlayer.vue";
 import AppHeader from "./components/AppHeader.vue";
 import SoftwareSection from "./components/SoftwareSection.vue";
 import MusicSection from "./components/MusicSection.vue";
+import LyricsSection from "./components/LyricsSection.vue";
+import BioSection from "./components/BioSection.vue";
+import AdminSection from "./components/AdminSection.vue";
 import { getInitialLocale, messages } from "./lib/translations";
 import { useAuthStore } from "./stores/auth";
 import { usePlayerStore } from "./stores/player";
@@ -27,7 +30,7 @@ const {
   canPlayCurrent
 } = storeToRefs(player);
 
-const activeMode = ref("music");
+const activeMode = ref("listen");
 const theme = ref(getInitialTheme());
 const locale = ref(getInitialLocale());
 const playerExpanded = ref(false);
@@ -44,7 +47,7 @@ const uploadBusy = ref(false);
 const loginError = ref("");
 const uploadCategory = ref("audio");
 
-const loginForm = reactive({ email: "", password: "" });
+const loginForm = reactive({ accessCode: "" });
 const trackForm = reactive(emptyTrack());
 const releaseForm = reactive(emptyRelease());
 
@@ -146,7 +149,11 @@ function handleMainScroll() {
 }
 
 onMounted(async () => {
+  await auth.hydrate();
   await refreshCatalog();
+  if (isAdmin.value) {
+    await refreshAdminData();
+  }
   window.addEventListener("scroll", handleMainScroll, { passive: true });
   window.addEventListener("wheel", handleMainScroll, { passive: true });
   window.addEventListener("touchmove", handleMainScroll, { passive: true });
@@ -415,8 +422,7 @@ async function submitLogin() {
   try {
     await auth.login(loginForm);
     await refreshAdminData();
-    loginForm.email = "";
-    loginForm.password = "";
+    loginForm.accessCode = "";
   } catch (error) {
     loginError.value = error.message;
   }
@@ -460,7 +466,16 @@ async function onMediaSelected(event) {
 async function submitTrack() {
   adminBusy.value = true;
   try {
-    const payload = { title: trackForm.title, artist: trackForm.artist, mood: trackForm.mood, duration: Number(trackForm.duration), visibility: trackForm.visibility, storageKey: trackForm.storageKey, releaseLabel: trackForm.releaseLabel };
+    const payload = {
+      title: trackForm.title,
+      artist: trackForm.artist,
+      mood: trackForm.mood,
+      duration: Number(trackForm.duration),
+      visibility: trackForm.visibility,
+      storageKey: trackForm.storageKey,
+      releaseLabel: trackForm.releaseLabel,
+      lyrics: trackForm.lyrics
+    };
     const response = trackForm.id ? await api.updateTrack(trackForm.id, payload) : await api.createTrack(payload);
     player.upsertTrack(response.item);
     Object.assign(trackForm, emptyTrack());
@@ -497,7 +512,17 @@ async function submitRelease() {
 }
 
 function editTrack(track) {
-  Object.assign(trackForm, { id: track.id, title: track.title, artist: track.artist, mood: track.mood, duration: String(track.duration), visibility: track.visibility, storageKey: track.storageKey ?? "", releaseLabel: track.releaseLabel });
+  Object.assign(trackForm, {
+    id: track.id,
+    title: track.title,
+    artist: track.artist,
+    mood: track.mood,
+    duration: String(track.duration),
+    visibility: track.visibility,
+    storageKey: track.storageKey ?? "",
+    releaseLabel: track.releaseLabel,
+    lyrics: track.lyrics ?? ""
+  });
 }
 
 function editRelease(release) {
@@ -531,7 +556,17 @@ function upsertRelease(release) {
 }
 
 function emptyTrack() {
-  return { id: "", title: "", artist: "Patrizio Milione", mood: "Pop", duration: "180", visibility: "public", storageKey: "", releaseLabel: "Single" };
+  return {
+    id: "",
+    title: "",
+    artist: "Patrizio Milione",
+    mood: "Pop",
+    duration: "180",
+    visibility: "public",
+    storageKey: "",
+    releaseLabel: "Single",
+    lyrics: ""
+  };
 }
 
 function emptyRelease() {
@@ -604,17 +639,75 @@ function toggleLocale() {
       :active-mode="activeMode"
       :theme="theme"
       :text="text"
+      :is-authenticated="isAuthenticated"
+      :is-admin="isAdmin"
       @update:mode="activeMode = $event"
       @toggle-theme="theme = theme === 'dark' ? 'light' : 'dark'"
       @toggle-locale="toggleLocale"
     />
 
+    <!--
     <section v-if="activeMode === 'software'" class="mode-page">
       <SoftwareSection :text="text" />
     </section>
+    -->
+
+    <AdminSection
+      v-if="activeMode === 'admin'"
+      :is-authenticated="isAuthenticated"
+      :is-admin="isAdmin"
+      :busy="adminBusy"
+      :upload-busy="uploadBusy"
+      :tracks="tracks"
+      :releases="releases"
+      :media-assets="mediaAssets"
+      :status-message="statusMessage"
+      :login-error="loginError"
+      :login-form="loginForm"
+      :track-form="trackForm"
+      :release-form="releaseForm"
+      :upload-category="uploadCategory"
+      @login="submitLogin"
+      @logout="logout"
+      @upload="onMediaSelected"
+      @submit-track="submitTrack"
+      @submit-release="submitRelease"
+      @edit-track="editTrack"
+      @edit-release="editRelease"
+      @remove-track="removeTrack"
+      @remove-release="removeRelease"
+      @update-category="uploadCategory = $event"
+    />
+
+    <LyricsSection
+      v-else-if="activeMode === 'lyrics'"
+      :tracks="displayTracks"
+      :text="text"
+    />
+
+    <section v-else-if="activeMode === 'bio'" class="mode-page">
+       <div class="placeholder-section">
+         <h2>{{ text.mode.bio }}</h2>
+         <p>Biography coming soon...</p>
+       </div>
+    </section>
+
+    <section v-else-if="activeMode === 'network'" class="mode-page">
+       <div class="placeholder-section">
+         <h2>{{ text.mode.network }}</h2>
+         <p>Partners and collaborators coming soon...</p>
+       </div>
+    </section>
+
+    <section v-else-if="activeMode === 'busking'" class="mode-page">
+       <div class="placeholder-section">
+         <h2>{{ text.mode.busking }}</h2>
+         <p>Busking schedule and locations coming soon...</p>
+       </div>
+    </section>
 
     <MusicSection
-      v-else
+      v-else-if="activeMode === 'listen'"
       :text="text"
       :catalog-loading="catalogLoading"
       :current-track-id="currentTrackId ?? ''"
@@ -625,7 +718,7 @@ function toggleLocale() {
     />
 
     <MiniPlayer
-      v-if="activeMode === 'music' && currentTrack"
+      v-if="activeMode === 'listen' && currentTrack"
       :track="displayCurrentTrack ?? currentTrack"
       :is-playing="isPlaying"
       :current-time-label="formattedTime"

@@ -3,7 +3,11 @@ export const messages = {
     languageName: "EN",
     mode: {
       software: "Software",
-      music: "Music"
+      listen: "Listen",
+      lyrics: "Lyrics",
+      bio: "Bio",
+      network: "Network",
+      busking: "Busking"
     },
     theme: {
       dark: "Dark",
@@ -105,7 +109,11 @@ export const messages = {
     languageName: "IT",
     mode: {
       software: "Software",
-      music: "Musica"
+      listen: "Ascolto",
+      lyrics: "Testo",
+      bio: "Bio",
+      network: "Network",
+      busking: "Busking"
     },
     theme: {
       dark: "Scuro",
