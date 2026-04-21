@@ -685,12 +685,10 @@ function toggleLocale() {
       :text="text"
     />
 
-    <section v-else-if="activeMode === 'bio'" class="mode-page">
-       <div class="placeholder-section">
-         <h2>{{ text.mode.bio }}</h2>
-         <p>Biography coming soon...</p>
-       </div>
-    </section>
+    <BioSection
+      v-else-if="activeMode === 'bio'"
+      :text="text"
+    />
 
     <section v-else-if="activeMode === 'network'" class="mode-page">
        <div class="placeholder-section">
