@@ -1,10 +1,6 @@
 export const messages = {
   en: {
     languageName: "EN",
-    mode: {
-      software: "Software",
-      music: "Music"
-    },
     theme: {
       dark: "Dark",
       light: "Light",
@@ -13,24 +9,16 @@ export const messages = {
     app: {
       eyebrow: "Patrizio Milione"
     },
-    software: {
-      eyebrow: "Software engineer",
-      heading: "Work in progress.",
-      summary:
-        "The software side is being rebuilt. For now, the best entry points are my LinkedIn and GitHub profiles.",
-      status: "Software section in progress"
-    },
     music: {
       eyebrow: "Music platform",
       heading: "Public listening and private creator controls.",
       summary:
         "Tracks and releases now come from the backend. Playback requests a signed URL. Admin login unlocks content management on the same page.",
-      listen: "Listen",
       releases: "Releases",
       admin: "Admin",
       importTracks: "Import local tracks",
       loadingTracks: "Loading tracks...",
-      catalog: "Catalog",
+      music: "Music",
       songs: "songs",
       ascending: "Ascending",
       selected: "Selected",
@@ -47,15 +35,6 @@ export const messages = {
       releaseLoading: "Release loading...",
       lyrics: "Lyrics",
       queue: "Queue"
-    },
-    softwareCards: {
-      frontendSummary: "Public site and admin surface.",
-      backendSummary: "Auth, tracks, releases, and playback authorization."
-    },
-    platformLinks: {
-      soundcloud: "Current uploads and drafts",
-      appleMusic: "Published releases",
-      localApi: "Backend health and data endpoints"
     },
     auth: {
       adminSession: "Admin session",
@@ -88,11 +67,17 @@ export const messages = {
       format: "Format",
       artworkUrl: "Artwork URL",
       publishedAt: "Published at",
-      trackIds: "Track IDs",
+      trackIds: "Tracks in release",
       notes: "Notes",
       saveRelease: "Save release",
       useForTrack: "Use for track",
       useForRelease: "Use for release",
+      audioUploadHelp: "Audio upload fills track storage key automatically.",
+      artworkUploadHelp: "Artwork upload fills release artwork URL automatically.",
+      storageKeyHelp: "Use uploaded audio URL or a hosted file path. This points to track audio.",
+      trackPicker: "Add track",
+      selectedTracks: "Selected tracks",
+      noTracksYet: "No tracks available yet.",
       audio: "audio",
       artwork: "artwork",
       misc: "misc",
@@ -103,10 +88,6 @@ export const messages = {
   },
   it: {
     languageName: "IT",
-    mode: {
-      software: "Software",
-      music: "Musica"
-    },
     theme: {
       dark: "Scuro",
       light: "Chiaro",
@@ -115,24 +96,16 @@ export const messages = {
     app: {
       eyebrow: "Patrizio Milione"
     },
-    software: {
-      eyebrow: "Ingegnere software",
-      heading: "Work in progress.",
-      summary:
-        "La parte software Ã¨ in fase di ricostruzione. Per ora, i punti di accesso migliori sono i miei profili LinkedIn e GitHub.",
-      status: "Sezione software in lavorazione"
-    },
     music: {
       eyebrow: "Piattaforma musicale",
       heading: "Ascolto pubblico e controlli privati per il creator.",
       summary:
         "Tracce e release arrivano dal backend. La riproduzione richiede un URL firmato. Il login admin sblocca la gestione contenuti nella stessa pagina.",
-      listen: "Ascolto",
       releases: "Release",
       admin: "Admin",
       importTracks: "Importa tracce locali",
       loadingTracks: "Caricamento tracce...",
-      catalog: "Catalogo",
+      music: "Musica",
       songs: "brani",
       ascending: "Crescente",
       selected: "Selezionato",
@@ -149,15 +122,6 @@ export const messages = {
       releaseLoading: "Caricamento release...",
       lyrics: "Testo",
       queue: "Coda"
-    },
-    softwareCards: {
-      frontendSummary: "Sito pubblico e area admin.",
-      backendSummary: "Auth, tracce, release e autorizzazione alla riproduzione."
-    },
-    platformLinks: {
-      soundcloud: "Upload e bozze correnti",
-      appleMusic: "Release pubblicate",
-      localApi: "Salute backend ed endpoint dati"
     },
     auth: {
       adminSession: "Sessione admin",
@@ -190,11 +154,17 @@ export const messages = {
       format: "Formato",
       artworkUrl: "URL artwork",
       publishedAt: "Pubblicato il",
-      trackIds: "ID tracce",
+      trackIds: "Tracce nella release",
       notes: "Note",
       saveRelease: "Salva release",
       useForTrack: "Usa per traccia",
       useForRelease: "Usa per release",
+      audioUploadHelp: "Il caricamento audio compila automaticamente lo storage key della traccia.",
+      artworkUploadHelp: "Il caricamento artwork compila automaticamente l'URL artwork della release.",
+      storageKeyHelp: "Usa l'URL audio caricato o un percorso file ospitato. Qui punta all'audio della traccia.",
+      trackPicker: "Aggiungi traccia",
+      selectedTracks: "Tracce selezionate",
+      noTracksYet: "Nessuna traccia disponibile.",
       audio: "audio",
       artwork: "artwork",
       misc: "misc",

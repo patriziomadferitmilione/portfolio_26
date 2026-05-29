@@ -5,7 +5,6 @@ import { api } from "./lib/api";
 import ExpandedPlayer from "./components/player/ExpandedPlayer.vue";
 import MiniPlayer from "./components/player/MiniPlayer.vue";
 import AppHeader from "./components/AppHeader.vue";
-import SoftwareSection from "./components/SoftwareSection.vue";
 import MusicSection from "./components/MusicSection.vue";
 import { getInitialLocale, messages } from "./lib/translations";
 import { useAuthStore } from "./stores/auth";
@@ -27,9 +26,9 @@ const {
   canPlayCurrent
 } = storeToRefs(player);
 
-const activeMode = ref("music");
 const theme = ref(getInitialTheme());
 const locale = ref(getInitialLocale());
+const loginPanelOpen = ref(false);
 const playerExpanded = ref(false);
 const miniPlayerHidden = ref(false);
 const releases = ref([]);
@@ -43,6 +42,15 @@ const adminBusy = ref(false);
 const uploadBusy = ref(false);
 const loginError = ref("");
 const uploadCategory = ref("audio");
+const selectedReleaseTrackId = ref("");
+const adminCards = reactive({
+  upload: true,
+  track: true,
+  release: true,
+  tracks: true,
+  releases: true,
+  media: true
+});
 
 const loginForm = reactive({ email: "", password: "" });
 const trackForm = reactive(emptyTrack());
@@ -96,6 +104,10 @@ const progress = computed(() => {
 const currentRelease = computed(() => releases.value.find((release) => release.tracks?.some((track) => track.id === currentTrackId.value)) ?? releases.value[0] ?? null);
 const currentLyrics = computed(() => currentTrack.value?.lyrics || currentRelease.value?.notes || text.value.player.noLyrics);
 const displayCurrentTrack = computed(() => displayTracks.value.find((track) => track.id === currentTrackId.value) ?? null);
+const adminTrackOptions = computed(() => tracks.value.map((track) => ({
+  id: track.id,
+  label: `${track.title} · ${track.artist}`
+})));
 const playerLabels = computed(() => ({
   nowPlaying: text.value.player.nowPlaying,
   noTrackSelected: text.value.player.noTrackSelected,
@@ -146,7 +158,16 @@ function handleMainScroll() {
 }
 
 onMounted(async () => {
+  try {
+    await auth.hydrate();
+  } catch (error) {
+    statusMessage.value = error.message;
+  }
+
   await refreshCatalog();
+  if (isAdmin.value) {
+    await refreshAdminData();
+  }
   window.addEventListener("scroll", handleMainScroll, { passive: true });
   window.addEventListener("wheel", handleMainScroll, { passive: true });
   window.addEventListener("touchmove", handleMainScroll, { passive: true });
@@ -483,11 +504,12 @@ async function submitRelease() {
       artworkUrl: releaseForm.artworkUrl,
       notes: releaseForm.notes,
       publishedAt: releaseForm.publishedAt ? new Date(releaseForm.publishedAt).toISOString() : null,
-      trackIds: releaseForm.trackIds.split(",").map((value) => value.trim()).filter(Boolean)
+      trackIds: releaseForm.trackIds
     };
     const response = releaseForm.id ? await api.updateRelease(releaseForm.id, payload) : await api.createRelease(payload);
     upsertRelease(response.item);
     Object.assign(releaseForm, emptyRelease());
+    selectedReleaseTrackId.value = "";
     await refreshAdminData();
   } catch (error) {
     statusMessage.value = error.message;
@@ -501,7 +523,8 @@ function editTrack(track) {
 }
 
 function editRelease(release) {
-  Object.assign(releaseForm, { id: release.id, title: release.title, slug: release.slug, format: release.format, visibility: release.visibility, artworkUrl: release.artworkUrl, notes: release.notes, publishedAt: release.publishedAt ? release.publishedAt.slice(0, 16) : "", trackIds: (release.tracks ?? []).map((track) => track.id).join(", ") });
+  Object.assign(releaseForm, { id: release.id, title: release.title, slug: release.slug, format: release.format, visibility: release.visibility, artworkUrl: release.artworkUrl, notes: release.notes, publishedAt: release.publishedAt ? release.publishedAt.slice(0, 16) : "", trackIds: (release.tracks ?? []).map((track) => track.id) });
+  selectedReleaseTrackId.value = "";
 }
 
 async function removeTrack(trackId) {
@@ -535,7 +558,23 @@ function emptyTrack() {
 }
 
 function emptyRelease() {
-  return { id: "", title: "", slug: "", format: "single", visibility: "public", artworkUrl: "/artwork/placeholder.jpg", notes: "", publishedAt: "", trackIds: "" };
+  return { id: "", title: "", slug: "", format: "single", visibility: "public", artworkUrl: "/artwork/placeholder.jpg", notes: "", publishedAt: "", trackIds: [] };
+}
+
+function addTrackToRelease() {
+  if (!selectedReleaseTrackId.value) {
+    return;
+  }
+
+  if (!releaseForm.trackIds.includes(selectedReleaseTrackId.value)) {
+    releaseForm.trackIds = [...releaseForm.trackIds, selectedReleaseTrackId.value];
+  }
+
+  selectedReleaseTrackId.value = "";
+}
+
+function removeTrackFromRelease(trackId) {
+  releaseForm.trackIds = releaseForm.trackIds.filter((value) => value !== trackId);
 }
 
 function createDemoTrack(id, title, artist, releaseTitle, duration, colors) {
@@ -594,38 +633,448 @@ function toggleLocale() {
   locale.value = locale.value === "en" ? "it" : "en";
 }
 
+function openLoginPanel() {
+  loginPanelOpen.value = true;
+}
+
+function toggleAdminCard(key) {
+  adminCards[key] = !adminCards[key];
+}
+
+function setAdminCards(value) {
+  adminCards.upload = value;
+  adminCards.track = value;
+  adminCards.release = value;
+  adminCards.tracks = value;
+  adminCards.releases = value;
+  adminCards.media = value;
+}
+
 </script>
 
 <template>
-  <div class="app-shell" :data-mode="activeMode">
+  <div class="app-shell">
     <audio ref="audioRef" preload="metadata" @timeupdate="handleTimeUpdate" @loadedmetadata="handleLoadedMetadata" @ended="handleTrackEnded" />
 
     <AppHeader
-      :active-mode="activeMode"
       :theme="theme"
+      :locale="locale"
       :text="text"
-      @update:mode="activeMode = $event"
       @toggle-theme="theme = theme === 'dark' ? 'light' : 'dark'"
       @toggle-locale="toggleLocale"
+      @open-login="openLoginPanel"
     />
 
-    <section v-if="activeMode === 'software'" class="mode-page">
-      <SoftwareSection :text="text" />
+    <section v-if="loginPanelOpen" class="login-panel">
+      <div class="login-panel-head">
+        <p class="eyebrow">{{ isAuthenticated ? text.auth.adminSession : text.auth.adminLogin }}</p>
+        <button class="panel-close" type="button" aria-label="Close login panel" @click="loginPanelOpen = false">
+          <i class="pi pi-times" />
+        </button>
+      </div>
+
+      <form v-if="!isAuthenticated" class="login-form" @submit.prevent="submitLogin">
+        <label class="field">
+          <span>Email</span>
+          <input v-model="loginForm.email" type="email" autocomplete="username" />
+        </label>
+        <label class="field">
+          <span>Password</span>
+          <input v-model="loginForm.password" type="password" autocomplete="current-password" />
+        </label>
+        <p v-if="loginError" class="login-error">{{ loginError }}</p>
+        <button class="login-action" type="submit" :disabled="authLoading">
+          {{ authLoading ? text.auth.signingIn : text.auth.login }}
+        </button>
+      </form>
+
+      <div v-else class="login-state">
+        <p class="login-note">{{ text.auth.adminSession }}</p>
+        <button class="login-action" type="button" @click="logout">
+          {{ text.auth.logout }}
+        </button>
+      </div>
+    </section>
+
+    <section v-if="isAdmin" class="admin-dashboard">
+      <div class="admin-dashboard-shell">
+        <header class="admin-dashboard-head">
+          <div>
+            <p class="eyebrow">{{ text.admin.managedContent }}</p>
+            <h2>{{ text.admin.mediaAssets }}</h2>
+            <p class="admin-summary">{{ user?.displayName ?? user?.email }}</p>
+          </div>
+
+          <div class="admin-header-actions">
+            <button class="admin-toolbar-action" type="button" @click="refreshAdminData">
+              {{ text.auth.refreshAdminData }}
+            </button>
+            <button class="admin-toolbar-action" type="button" @click="logout">
+              {{ text.auth.logout }}
+            </button>
+          </div>
+        </header>
+
+        <div class="admin-view-toggle-row" role="toolbar" aria-label="Admin card visibility">
+          <button
+            class="admin-view-toggle action"
+            type="button"
+            aria-label="Show all admin cards"
+            data-tooltip="Show all"
+            @click="setAdminCards(true)"
+          >
+            <i class="pi pi-folder-open" />
+          </button>
+          <button
+            class="admin-view-toggle action"
+            type="button"
+            aria-label="Hide all admin cards"
+            data-tooltip="Hide all"
+            @click="setAdminCards(false)"
+          >
+            <i class="pi pi-folder" />
+          </button>
+          <button
+            class="admin-view-toggle"
+            :class="{ active: adminCards.upload, inactive: !adminCards.upload }"
+            type="button"
+            :aria-pressed="adminCards.upload"
+            :data-tooltip="adminCards.upload ? 'Hide upload card' : 'Show upload card'"
+            aria-label="Toggle upload card"
+            @click="toggleAdminCard('upload')"
+          >
+            <i class="pi pi-cloud-upload" />
+          </button>
+          <button
+            class="admin-view-toggle"
+            :class="{ active: adminCards.track, inactive: !adminCards.track }"
+            type="button"
+            :aria-pressed="adminCards.track"
+            :data-tooltip="adminCards.track ? 'Hide track form' : 'Show track form'"
+            aria-label="Toggle track form"
+            @click="toggleAdminCard('track')"
+          >
+            <i class="pi pi-music" />
+          </button>
+          <button
+            class="admin-view-toggle"
+            :class="{ active: adminCards.release, inactive: !adminCards.release }"
+            type="button"
+            :aria-pressed="adminCards.release"
+            :data-tooltip="adminCards.release ? 'Hide release form' : 'Show release form'"
+            aria-label="Toggle release form"
+            @click="toggleAdminCard('release')"
+          >
+            <i class="pi pi-box" />
+          </button>
+          <button
+            class="admin-view-toggle"
+            :class="{ active: adminCards.tracks, inactive: !adminCards.tracks }"
+            type="button"
+            :aria-pressed="adminCards.tracks"
+            :data-tooltip="adminCards.tracks ? 'Hide tracks list' : 'Show tracks list'"
+            aria-label="Toggle tracks list"
+            @click="toggleAdminCard('tracks')"
+          >
+            <i class="pi pi-list" />
+          </button>
+          <button
+            class="admin-view-toggle"
+            :class="{ active: adminCards.releases, inactive: !adminCards.releases }"
+            type="button"
+            :aria-pressed="adminCards.releases"
+            :data-tooltip="adminCards.releases ? 'Hide releases list' : 'Show releases list'"
+            aria-label="Toggle releases list"
+            @click="toggleAdminCard('releases')"
+          >
+            <i class="pi pi-book" />
+          </button>
+          <button
+            class="admin-view-toggle"
+            :class="{ active: adminCards.media, inactive: !adminCards.media }"
+            type="button"
+            :aria-pressed="adminCards.media"
+            :data-tooltip="adminCards.media ? 'Hide media library' : 'Show media library'"
+            aria-label="Toggle media library"
+            @click="toggleAdminCard('media')"
+          >
+            <i class="pi pi-images" />
+          </button>
+        </div>
+
+        <p v-if="statusMessage" class="status-message admin-status">{{ statusMessage }}</p>
+
+        <div class="admin-grid">
+          <section v-if="adminCards.upload" class="admin-card">
+            <div class="card-head">
+              <div>
+                <p class="eyebrow">{{ text.admin.mediaUpload }}</p>
+                <h3>{{ text.admin.uploadFile }}</h3>
+              </div>
+            </div>
+
+            <input ref="mediaFileRef" class="hidden-file-input" type="file" @change="onMediaSelected" />
+
+            <label class="field">
+              <span>{{ text.admin.category }}</span>
+              <select v-model="uploadCategory">
+                <option :value="text.admin.audio">{{ text.admin.audio }}</option>
+                <option :value="text.admin.artwork">{{ text.admin.artwork }}</option>
+                <option :value="text.admin.misc">{{ text.admin.misc }}</option>
+              </select>
+            </label>
+
+            <p class="admin-help">
+              {{ uploadCategory === text.admin.audio ? text.admin.useForTrack : text.admin.useForRelease }}
+            </p>
+
+            <p class="admin-help">
+              {{ uploadCategory === text.admin.audio ? text.admin.audioUploadHelp : text.admin.artworkUploadHelp }}
+            </p>
+
+            <div class="admin-inline-actions">
+              <button class="admin-secondary-action" type="button" @click="openMediaPicker">
+                {{ text.admin.uploadFile }}
+              </button>
+            </div>
+
+            <p v-if="uploadBusy" class="admin-help">{{ text.admin.uploading }}</p>
+          </section>
+
+          <section v-if="adminCards.track" class="admin-card">
+            <div class="card-head">
+              <div>
+                <p class="eyebrow">{{ text.admin.trackForm }}</p>
+                <h3>{{ trackForm.id ? trackForm.title : text.admin.saveTrack }}</h3>
+              </div>
+            </div>
+
+            <div class="admin-inline-actions">
+              <button class="admin-secondary-action" type="button" @click="Object.assign(trackForm, emptyTrack())">
+                Reset
+              </button>
+            </div>
+
+            <div class="admin-form-grid">
+              <label class="field">
+                <span>{{ text.admin.title }}</span>
+                <input v-model="trackForm.title" type="text" />
+              </label>
+              <label class="field">
+                <span>{{ text.admin.artist }}</span>
+                <input v-model="trackForm.artist" type="text" />
+              </label>
+              <label class="field">
+                <span>{{ text.admin.mood }}</span>
+                <input v-model="trackForm.mood" type="text" />
+              </label>
+              <label class="field">
+                <span>{{ text.admin.duration }}</span>
+                <input v-model="trackForm.duration" type="number" min="0" step="1" />
+              </label>
+              <label class="field">
+                <span>{{ text.admin.visibility }}</span>
+                <select v-model="trackForm.visibility">
+                  <option :value="text.admin.public">{{ text.admin.public }}</option>
+                  <option :value="text.admin.private">{{ text.admin.private }}</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>{{ text.admin.releaseLabel }}</span>
+                <input v-model="trackForm.releaseLabel" type="text" />
+              </label>
+              <label class="field field-wide">
+                <span>{{ text.admin.storageKey }}</span>
+                <input v-model="trackForm.storageKey" type="text" />
+              </label>
+            </div>
+
+            <p class="admin-help">{{ text.admin.storageKeyHelp }}</p>
+
+            <button class="login-action" type="button" :disabled="adminBusy" @click="submitTrack">
+              {{ adminBusy ? text.admin.saving : text.admin.saveTrack }}
+            </button>
+          </section>
+
+          <section v-if="adminCards.release" class="admin-card">
+            <div class="card-head">
+              <div>
+                <p class="eyebrow">{{ text.admin.releaseForm }}</p>
+                <h3>{{ releaseForm.id ? releaseForm.title : text.admin.saveRelease }}</h3>
+              </div>
+            </div>
+
+            <div class="admin-inline-actions">
+              <button class="admin-secondary-action" type="button" @click="Object.assign(releaseForm, emptyRelease())">
+                Reset
+              </button>
+            </div>
+
+            <div class="admin-form-grid">
+              <label class="field">
+                <span>{{ text.admin.title }}</span>
+                <input v-model="releaseForm.title" type="text" />
+              </label>
+              <label class="field">
+                <span>{{ text.admin.slug }}</span>
+                <input v-model="releaseForm.slug" type="text" />
+              </label>
+              <label class="field">
+                <span>{{ text.admin.format }}</span>
+                <select v-model="releaseForm.format">
+                  <option value="single">single</option>
+                  <option value="ep">ep</option>
+                  <option value="album">album</option>
+                  <option value="demo">demo</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>{{ text.admin.visibility }}</span>
+                <select v-model="releaseForm.visibility">
+                  <option :value="text.admin.public">{{ text.admin.public }}</option>
+                  <option :value="text.admin.private">{{ text.admin.private }}</option>
+                </select>
+              </label>
+              <label class="field field-wide">
+                <span>{{ text.admin.artworkUrl }}</span>
+                <input v-model="releaseForm.artworkUrl" type="text" />
+              </label>
+              <label class="field field-wide">
+                <span>{{ text.admin.publishedAt }}</span>
+                <input v-model="releaseForm.publishedAt" type="datetime-local" />
+              </label>
+              <label class="field field-wide">
+                <span>{{ text.admin.trackIds }}</span>
+                <select v-model="selectedReleaseTrackId" :disabled="!adminTrackOptions.length">
+                  <option value="" disabled>
+                    {{ adminTrackOptions.length ? text.admin.trackPicker : text.admin.noTracksYet }}
+                  </option>
+                  <option v-for="track in adminTrackOptions" :key="track.id" :value="track.id">
+                    {{ track.label }}
+                  </option>
+                </select>
+              </label>
+              <div class="admin-inline-actions">
+                <button class="admin-secondary-action" type="button" :disabled="!selectedReleaseTrackId" @click="addTrackToRelease">
+                  {{ text.admin.trackPicker }}
+                </button>
+              </div>
+              <div class="selected-track-chips">
+                <button
+                  v-for="trackId in releaseForm.trackIds"
+                  :key="trackId"
+                  class="selected-track-chip"
+                  type="button"
+                  @click="removeTrackFromRelease(trackId)"
+                >
+                  <span>{{ adminTrackOptions.find((track) => track.id === trackId)?.label ?? trackId }}</span>
+                  <i class="pi pi-times" />
+                </button>
+                <p v-if="!releaseForm.trackIds.length" class="admin-help">{{ text.admin.noTracksYet }}</p>
+              </div>
+              <label class="field field-wide">
+                <span>{{ text.admin.notes }}</span>
+                <textarea v-model="releaseForm.notes" rows="4" />
+              </label>
+            </div>
+
+            <button class="login-action" type="button" :disabled="adminBusy" @click="submitRelease">
+              {{ adminBusy ? text.admin.saving : text.admin.saveRelease }}
+            </button>
+          </section>
+        </div>
+
+        <div class="admin-grid admin-grid-lower">
+          <section v-if="adminCards.tracks" class="admin-card">
+            <div class="card-head">
+              <div>
+                <p class="eyebrow">{{ text.admin.tracks }}</p>
+                <h3>{{ text.admin.managedContent }}</h3>
+              </div>
+            </div>
+
+            <div class="admin-list">
+              <article v-for="track in tracks" :key="track.id" class="admin-list-item">
+                <div>
+                  <strong>{{ track.title }}</strong>
+                  <p>{{ track.artist }}</p>
+                  <p class="admin-muted">{{ track.releaseLabel }} · {{ track.visibility }}</p>
+                </div>
+                <div class="admin-item-actions">
+                  <button class="admin-secondary-action" type="button" @click="editTrack(track)">
+                    Edit
+                  </button>
+                  <button class="admin-danger-action" type="button" @click="removeTrack(track.id)">
+                    Delete
+                  </button>
+                </div>
+              </article>
+            </div>
+          </section>
+
+          <section v-if="adminCards.releases" class="admin-card">
+            <div class="card-head">
+              <div>
+                <p class="eyebrow">{{ text.admin.releases }}</p>
+                <h3>{{ text.admin.managedContent }}</h3>
+              </div>
+            </div>
+
+            <div class="admin-list">
+              <article v-for="release in releases" :key="release.id" class="admin-list-item">
+                <div>
+                  <strong>{{ release.title }}</strong>
+                  <p>{{ release.slug }} · {{ release.format }}</p>
+                  <p class="admin-muted">{{ release.visibility }} · {{ (release.tracks ?? []).length }} tracks</p>
+                </div>
+                <div class="admin-item-actions">
+                  <button class="admin-secondary-action" type="button" @click="editRelease(release)">
+                    Edit
+                  </button>
+                  <button class="admin-danger-action" type="button" @click="removeRelease(release.id)">
+                    Delete
+                  </button>
+                </div>
+              </article>
+            </div>
+          </section>
+        </div>
+
+        <section v-if="adminCards.media" class="admin-card media-library">
+          <div class="card-head">
+            <div>
+              <p class="eyebrow">{{ text.admin.mediaAssets }}</p>
+              <h3>{{ mediaAssets.length }} assets</h3>
+            </div>
+          </div>
+
+          <div class="admin-list">
+            <article v-for="asset in mediaAssets" :key="asset.id" class="admin-list-item">
+              <div>
+                <strong>{{ asset.originalName }}</strong>
+                <p>{{ asset.category }} · {{ asset.mimeType }}</p>
+                <p class="admin-muted">{{ asset.url }}</p>
+              </div>
+            </article>
+            <p v-if="!mediaAssets.length" class="admin-muted">No media uploaded yet.</p>
+          </div>
+        </section>
+      </div>
     </section>
 
     <MusicSection
-      v-else
       :text="text"
       :catalog-loading="catalogLoading"
       :current-track-id="currentTrackId ?? ''"
       :is-playing="isPlaying"
+      :shuffle-enabled="shuffleEnabled"
       :tracks="displayTracks"
       @select-track="selectPlaybackTrack"
       @toggle-track="toggleTrackFromList"
+      @toggle-shuffle="player.toggleShuffle()"
     />
 
     <MiniPlayer
-      v-if="activeMode === 'music' && currentTrack"
       :track="displayCurrentTrack ?? currentTrack"
       :is-playing="isPlaying"
       :current-time-label="formattedTime"

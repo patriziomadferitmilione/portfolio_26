@@ -4,10 +4,11 @@ defineProps({
   catalogLoading: { type: Boolean, default: false },
   currentTrackId: { type: String, default: "" },
   isPlaying: { type: Boolean, default: false },
+  shuffleEnabled: { type: Boolean, default: false },
   tracks: { type: Array, default: () => [] }
 });
 
-defineEmits(["select-track", "toggle-track"]);
+defineEmits(["select-track", "toggle-track", "toggle-shuffle"]);
 </script>
 
 <template>
@@ -15,13 +16,16 @@ defineEmits(["select-track", "toggle-track"]);
     <div class="music-list-shell">
       <header class="music-list-header">
         <div>
-          <p class="music-list-eyebrow">{{ text.music.listen }}</p>
-          <h1 class="music-list-title">{{ text.music.catalog }}</h1>
+          <h1 class="music-list-title">{{ text.music.music }}</h1>
         </div>
-        <div class="music-list-count">
-          <strong>{{ tracks.length }}</strong>
-          <span>{{ text.music.songs }}</span>
-        </div>
+        <button
+          class="shuffle-toggle"
+          type="button"
+          :class="{ active: shuffleEnabled }"
+          :aria-label="shuffleEnabled ? 'Disable shuffle' : 'Enable shuffle'"
+          :title="shuffleEnabled ? 'Disable shuffle' : 'Enable shuffle'"
+          @click="$emit('toggle-shuffle')"
+        />
       </header>
 
       <div v-if="catalogLoading" class="empty-state">{{ text.music.loadingTracks }}</div>
@@ -113,15 +117,29 @@ defineEmits(["select-track", "toggle-track"]);
   color: var(--page-text);
 }
 
-.music-list-count {
-  display: grid;
-  justify-items: end;
+.shuffle-toggle {
+  width: 3.25rem;
+  height: 3.25rem;
+  flex: 0 0 auto;
+  border: 1px solid var(--panel-border);
+  border-radius: 999px;
+  background: var(--panel-muted);
   color: var(--text-muted);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 180ms ease, background 180ms ease, border-color 180ms ease, color 180ms ease;
 }
 
-.music-list-count strong {
-  font-size: 1.5rem;
+.shuffle-toggle.active {
   color: var(--page-text);
+  background: var(--accent-soft);
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--panel-border));
+}
+
+.shuffle-toggle:hover {
+  transform: translateY(-1px);
 }
 
 .songs {
@@ -206,6 +224,7 @@ defineEmits(["select-track", "toggle-track"]);
 .song-row-side {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 1rem;
   flex-shrink: 0;
 }
@@ -227,6 +246,8 @@ defineEmits(["select-track", "toggle-track"]);
   background: var(--accent-soft);
   color: var(--accent);
   cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
   transition: transform 180ms ease, background-color 180ms ease;
 }
 
@@ -246,11 +267,12 @@ defineEmits(["select-track", "toggle-track"]);
   }
 
   .song-row {
-    align-items: flex-start;
+    align-items: center;
   }
 
   .song-row-side {
     gap: 0;
+    align-self: center;
   }
 
   .song-release,

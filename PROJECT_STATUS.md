@@ -5,7 +5,7 @@
 - Initialized the frontend repository and pushed it to GitHub.
 - Set up Vue 3 with Vite, Pinia, and PrimeVue.
 - Configured the Vite dev server to run on port 5193.
-- Built the split portfolio shell with `Software` and `Music` modes.
+- Built the music-only portfolio shell.
 - Added a local player store with queue selection, playback controls, volume, and local file import.
 - Added dark and light themes based on the shared color palette.
 - Shifted the layout toward a mobile-first baseline.
@@ -80,7 +80,6 @@
 
 - `Phase 1`
   - Finalize mobile-first public music homepage
-  - Split current music mode into reusable sections/components
   - Add route structure for public pages
 - `Phase 2`
   - Connect track and release views to backend data

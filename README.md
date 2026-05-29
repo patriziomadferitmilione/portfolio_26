@@ -1,6 +1,6 @@
 # portfolio_26
 
-Personal website and web app project, with a music streaming section as the main product area.
+Personal website and web app project, music only.
 
 ## Planned stack
 
@@ -12,6 +12,6 @@ Personal website and web app project, with a music streaming section as the main
 
 ## Initial goals
 
-- Public portfolio site
+- Public music portfolio site
 - Music catalog and playback
 - Private/admin area for uploads and management
