@@ -1,53 +1,32 @@
 import { computed, ref } from "vue";
 import { defineStore } from "pinia";
 
-import { api } from "../lib/api";
+const STORAGE_KEY = "portfolio_access_code";
 
 export const useAuthStore = defineStore("auth", () => {
-  const user = ref(null);
+  const accessCode = ref(localStorage.getItem(STORAGE_KEY) || "");
   const loading = ref(false);
 
-  const isAuthenticated = computed(() => Boolean(user.value));
-  const isAdmin = computed(() => user.value?.role === "admin");
+  const isAuthenticated = computed(() => Boolean(accessCode.value));
+  const isAdmin = computed(() => Boolean(accessCode.value)); // Any code unlocks for now, backend will verify actual value
 
-  async function hydrate() {
-    loading.value = true;
-    try {
-      const response = await api.getCurrentUser();
-      user.value = response.user;
-    } catch (error) {
-      if (error.status !== 401) {
-        throw error;
-      }
-      user.value = null;
-    } finally {
-      loading.value = false;
-    }
+  function hydrate() {
+    // No-op for this mode, but kept for compatibility
   }
 
-  async function login(credentials) {
-    loading.value = true;
-    try {
-      const response = await api.login(credentials);
-      user.value = response.user;
-      return response.user;
-    } finally {
-      loading.value = false;
-    }
+  function login({ accessCode: code }) {
+    accessCode.value = code;
+    localStorage.setItem(STORAGE_KEY, code);
+    return { success: true };
   }
 
-  async function logout() {
-    loading.value = true;
-    try {
-      await api.logout();
-      user.value = null;
-    } finally {
-      loading.value = false;
-    }
+  function logout() {
+    accessCode.value = "";
+    localStorage.removeItem(STORAGE_KEY);
   }
 
   return {
-    user,
+    accessCode,
     loading,
     isAuthenticated,
     isAdmin,
