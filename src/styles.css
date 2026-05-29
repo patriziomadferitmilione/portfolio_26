@@ -763,6 +763,20 @@ a {
   background: rgba(255, 255, 255, 0.06);
 }
 
+.admin-media-section {
+  display: grid;
+  gap: 0.8rem;
+  padding: 0.9rem;
+  border-radius: 20px;
+  border: 1px solid var(--panel-border);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.admin-media-section h4 {
+  margin: 0.2rem 0 0;
+  color: var(--page-text);
+}
+
 .card-head {
   display: flex;
   align-items: flex-start;

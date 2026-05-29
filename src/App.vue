@@ -34,17 +34,16 @@ const miniPlayerHidden = ref(false);
 const releases = ref([]);
 const mediaAssets = ref([]);
 const audioRef = ref(null);
-const fileInputRef = ref(null);
-const mediaFileRef = ref(null);
+const trackMediaFileRef = ref(null);
+const releaseMediaFileRef = ref(null);
 const statusMessage = ref("");
 const catalogLoading = ref(false);
 const adminBusy = ref(false);
-const uploadBusy = ref(false);
+const trackUploadBusy = ref(false);
+const releaseUploadBusy = ref(false);
 const loginError = ref("");
-const uploadCategory = ref("audio");
 const selectedReleaseTrackId = ref("");
 const adminCards = reactive({
-  upload: true,
   track: true,
   release: true,
   tracks: true,
@@ -312,8 +311,12 @@ function seekTrack(event) {
   player.setCurrentTime(audioRef.value.currentTime);
 }
 
-function openFilePicker() {
-  fileInputRef.value?.click();
+function openTrackMediaPicker() {
+  trackMediaFileRef.value?.click();
+}
+
+function openReleaseMediaPicker() {
+  releaseMediaFileRef.value?.click();
 }
 
 function openPlayer() {
@@ -443,37 +446,48 @@ async function submitLogin() {
   }
 }
 
-function openMediaPicker() {
-  mediaFileRef.value?.click();
-}
-
-async function onMediaSelected(event) {
+async function onTrackMediaSelected(event) {
   const file = event.target.files?.[0];
   if (!file) return;
 
-  uploadBusy.value = true;
+  trackUploadBusy.value = true;
   statusMessage.value = "";
 
   try {
     const response = await api.uploadMedia({
       file,
-      category: uploadCategory.value
+      category: "audio"
     });
     mediaAssets.value = [response.item, ...mediaAssets.value];
-
-    if (uploadCategory.value === "audio") {
-      trackForm.storageKey = response.item.url;
-    }
-
-    if (uploadCategory.value === "artwork") {
-      releaseForm.artworkUrl = response.item.url;
-    }
-
-    statusMessage.value = "Upload completed.";
+    trackForm.audioPath = response.item.path ?? response.item.url;
+    statusMessage.value = "Audio upload completed.";
   } catch (error) {
     statusMessage.value = error.message;
   } finally {
-    uploadBusy.value = false;
+    trackUploadBusy.value = false;
+    event.target.value = "";
+  }
+}
+
+async function onReleaseMediaSelected(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+
+  releaseUploadBusy.value = true;
+  statusMessage.value = "";
+
+  try {
+    const response = await api.uploadMedia({
+      file,
+      category: "artwork"
+    });
+    mediaAssets.value = [response.item, ...mediaAssets.value];
+    releaseForm.artworkPath = response.item.path ?? response.item.url;
+    statusMessage.value = "Artwork upload completed.";
+  } catch (error) {
+    statusMessage.value = error.message;
+  } finally {
+    releaseUploadBusy.value = false;
     event.target.value = "";
   }
 }
@@ -481,7 +495,7 @@ async function onMediaSelected(event) {
 async function submitTrack() {
   adminBusy.value = true;
   try {
-    const payload = { title: trackForm.title, artist: trackForm.artist, mood: trackForm.mood, duration: Number(trackForm.duration), visibility: trackForm.visibility, storageKey: trackForm.storageKey, releaseLabel: trackForm.releaseLabel };
+    const payload = { title: trackForm.title, artist: trackForm.artist, mood: trackForm.mood, duration: Number(trackForm.duration), visibility: trackForm.visibility, audioPath: trackForm.audioPath, releaseLabel: trackForm.releaseLabel };
     const response = trackForm.id ? await api.updateTrack(trackForm.id, payload) : await api.createTrack(payload);
     player.upsertTrack(response.item);
     Object.assign(trackForm, emptyTrack());
@@ -501,7 +515,7 @@ async function submitRelease() {
       slug: releaseForm.slug,
       format: releaseForm.format,
       visibility: releaseForm.visibility,
-      artworkUrl: releaseForm.artworkUrl,
+      artworkPath: releaseForm.artworkPath,
       notes: releaseForm.notes,
       publishedAt: releaseForm.publishedAt ? new Date(releaseForm.publishedAt).toISOString() : null,
       trackIds: releaseForm.trackIds
@@ -519,11 +533,11 @@ async function submitRelease() {
 }
 
 function editTrack(track) {
-  Object.assign(trackForm, { id: track.id, title: track.title, artist: track.artist, mood: track.mood, duration: String(track.duration), visibility: track.visibility, storageKey: track.storageKey ?? "", releaseLabel: track.releaseLabel });
+  Object.assign(trackForm, { id: track.id, title: track.title, artist: track.artist, mood: track.mood, duration: String(track.duration), visibility: track.visibility, audioPath: track.audioPath ?? track.storageKey ?? "", releaseLabel: track.releaseLabel });
 }
 
 function editRelease(release) {
-  Object.assign(releaseForm, { id: release.id, title: release.title, slug: release.slug, format: release.format, visibility: release.visibility, artworkUrl: release.artworkUrl, notes: release.notes, publishedAt: release.publishedAt ? release.publishedAt.slice(0, 16) : "", trackIds: (release.tracks ?? []).map((track) => track.id) });
+  Object.assign(releaseForm, { id: release.id, title: release.title, slug: release.slug, format: release.format, visibility: release.visibility, artworkPath: release.artworkPath ?? release.artworkUrl ?? "", notes: release.notes, publishedAt: release.publishedAt ? release.publishedAt.slice(0, 16) : "", trackIds: (release.tracks ?? []).map((track) => track.id) });
   selectedReleaseTrackId.value = "";
 }
 
@@ -554,11 +568,11 @@ function upsertRelease(release) {
 }
 
 function emptyTrack() {
-  return { id: "", title: "", artist: "Patrizio Milione", mood: "Pop", duration: "180", visibility: "public", storageKey: "", releaseLabel: "Single" };
+  return { id: "", title: "", artist: "Patrizio Milione", mood: "Pop", duration: "180", visibility: "public", audioPath: "", releaseLabel: "Single" };
 }
 
 function emptyRelease() {
-  return { id: "", title: "", slug: "", format: "single", visibility: "public", artworkUrl: "/artwork/placeholder.jpg", notes: "", publishedAt: "", trackIds: [] };
+  return { id: "", title: "", slug: "", format: "single", visibility: "public", artworkPath: "/artwork/placeholder.jpg", notes: "", publishedAt: "", trackIds: [] };
 }
 
 function addTrackToRelease() {
@@ -642,7 +656,6 @@ function toggleAdminCard(key) {
 }
 
 function setAdminCards(value) {
-  adminCards.upload = value;
   adminCards.track = value;
   adminCards.release = value;
   adminCards.tracks = value;
@@ -736,17 +749,6 @@ function setAdminCards(value) {
           </button>
           <button
             class="admin-view-toggle"
-            :class="{ active: adminCards.upload, inactive: !adminCards.upload }"
-            type="button"
-            :aria-pressed="adminCards.upload"
-            :data-tooltip="adminCards.upload ? 'Hide upload card' : 'Show upload card'"
-            aria-label="Toggle upload card"
-            @click="toggleAdminCard('upload')"
-          >
-            <i class="pi pi-cloud-upload" />
-          </button>
-          <button
-            class="admin-view-toggle"
             :class="{ active: adminCards.track, inactive: !adminCards.track }"
             type="button"
             :aria-pressed="adminCards.track"
@@ -805,42 +807,6 @@ function setAdminCards(value) {
         <p v-if="statusMessage" class="status-message admin-status">{{ statusMessage }}</p>
 
         <div class="admin-grid">
-          <section v-if="adminCards.upload" class="admin-card">
-            <div class="card-head">
-              <div>
-                <p class="eyebrow">{{ text.admin.mediaUpload }}</p>
-                <h3>{{ text.admin.uploadFile }}</h3>
-              </div>
-            </div>
-
-            <input ref="mediaFileRef" class="hidden-file-input" type="file" @change="onMediaSelected" />
-
-            <label class="field">
-              <span>{{ text.admin.category }}</span>
-              <select v-model="uploadCategory">
-                <option :value="text.admin.audio">{{ text.admin.audio }}</option>
-                <option :value="text.admin.artwork">{{ text.admin.artwork }}</option>
-                <option :value="text.admin.misc">{{ text.admin.misc }}</option>
-              </select>
-            </label>
-
-            <p class="admin-help">
-              {{ uploadCategory === text.admin.audio ? text.admin.useForTrack : text.admin.useForRelease }}
-            </p>
-
-            <p class="admin-help">
-              {{ uploadCategory === text.admin.audio ? text.admin.audioUploadHelp : text.admin.artworkUploadHelp }}
-            </p>
-
-            <div class="admin-inline-actions">
-              <button class="admin-secondary-action" type="button" @click="openMediaPicker">
-                {{ text.admin.uploadFile }}
-              </button>
-            </div>
-
-            <p v-if="uploadBusy" class="admin-help">{{ text.admin.uploading }}</p>
-          </section>
-
           <section v-if="adminCards.track" class="admin-card">
             <div class="card-head">
               <div>
@@ -853,6 +819,26 @@ function setAdminCards(value) {
               <button class="admin-secondary-action" type="button" @click="Object.assign(trackForm, emptyTrack())">
                 Reset
               </button>
+            </div>
+
+            <div class="admin-media-section">
+              <div class="card-head">
+                <div>
+                  <p class="eyebrow">{{ text.admin.mediaUpload }}</p>
+                  <h4>{{ text.admin.uploadAudio }}</h4>
+                </div>
+                <button class="admin-secondary-action" type="button" @click="openTrackMediaPicker">
+                  {{ text.admin.uploadAudio }}
+                </button>
+              </div>
+              <input ref="trackMediaFileRef" class="hidden-file-input" type="file" accept="audio/*" @change="onTrackMediaSelected" />
+              <p class="admin-help">{{ text.admin.audioUploadHelp }}</p>
+              <label class="field field-wide">
+                <span>{{ text.admin.audioPath }}</span>
+                <input v-model="trackForm.audioPath" type="text" />
+              </label>
+              <p class="admin-help">{{ text.admin.audioPathHelp }}</p>
+              <p v-if="trackUploadBusy" class="admin-help">{{ text.admin.uploading }}</p>
             </div>
 
             <div class="admin-form-grid">
@@ -883,13 +869,7 @@ function setAdminCards(value) {
                 <span>{{ text.admin.releaseLabel }}</span>
                 <input v-model="trackForm.releaseLabel" type="text" />
               </label>
-              <label class="field field-wide">
-                <span>{{ text.admin.storageKey }}</span>
-                <input v-model="trackForm.storageKey" type="text" />
-              </label>
             </div>
-
-            <p class="admin-help">{{ text.admin.storageKeyHelp }}</p>
 
             <button class="login-action" type="button" :disabled="adminBusy" @click="submitTrack">
               {{ adminBusy ? text.admin.saving : text.admin.saveTrack }}
@@ -908,6 +888,26 @@ function setAdminCards(value) {
               <button class="admin-secondary-action" type="button" @click="Object.assign(releaseForm, emptyRelease())">
                 Reset
               </button>
+            </div>
+
+            <div class="admin-media-section">
+              <div class="card-head">
+                <div>
+                  <p class="eyebrow">{{ text.admin.mediaUpload }}</p>
+                  <h4>{{ text.admin.uploadArtwork }}</h4>
+                </div>
+                <button class="admin-secondary-action" type="button" @click="openReleaseMediaPicker">
+                  {{ text.admin.uploadArtwork }}
+                </button>
+              </div>
+              <input ref="releaseMediaFileRef" class="hidden-file-input" type="file" accept="image/*" @change="onReleaseMediaSelected" />
+              <p class="admin-help">{{ text.admin.artworkUploadHelp }}</p>
+              <label class="field field-wide">
+                <span>{{ text.admin.artworkPath }}</span>
+                <input v-model="releaseForm.artworkPath" type="text" />
+              </label>
+              <p class="admin-help">{{ text.admin.artworkPathHelp }}</p>
+              <p v-if="releaseUploadBusy" class="admin-help">{{ text.admin.uploading }}</p>
             </div>
 
             <div class="admin-form-grid">
@@ -934,10 +934,6 @@ function setAdminCards(value) {
                   <option :value="text.admin.public">{{ text.admin.public }}</option>
                   <option :value="text.admin.private">{{ text.admin.private }}</option>
                 </select>
-              </label>
-              <label class="field field-wide">
-                <span>{{ text.admin.artworkUrl }}</span>
-                <input v-model="releaseForm.artworkUrl" type="text" />
               </label>
               <label class="field field-wide">
                 <span>{{ text.admin.publishedAt }}</span>
@@ -972,11 +968,12 @@ function setAdminCards(value) {
                 </button>
                 <p v-if="!releaseForm.trackIds.length" class="admin-help">{{ text.admin.noTracksYet }}</p>
               </div>
-              <label class="field field-wide">
-                <span>{{ text.admin.notes }}</span>
-                <textarea v-model="releaseForm.notes" rows="4" />
-              </label>
             </div>
+
+            <label class="field field-wide">
+              <span>{{ text.admin.notes }}</span>
+              <textarea v-model="releaseForm.notes" rows="4" />
+            </label>
 
             <button class="login-action" type="button" :disabled="adminBusy" @click="submitRelease">
               {{ adminBusy ? text.admin.saving : text.admin.saveRelease }}
