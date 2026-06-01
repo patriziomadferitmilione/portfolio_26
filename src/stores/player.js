@@ -16,6 +16,7 @@ function normalizeTrack(track, index = 0) {
     mood: track.mood ?? "Unreleased",
     duration: track.duration ?? 0,
     releaseLabel: track.releaseLabel ?? "Draft",
+    artworkPath: track.artworkPath ?? "",
     accent: track.accent ?? palette[index % palette.length],
     streamUrl: track.streamUrl ?? "",
     visibility: track.visibility ?? "public"

@@ -35,6 +35,7 @@ const releases = ref([]);
 const mediaAssets = ref([]);
 const audioRef = ref(null);
 const trackMediaFileRef = ref(null);
+const trackArtworkFileRef = ref(null);
 const releaseMediaFileRef = ref(null);
 const statusMessage = ref("");
 const catalogLoading = ref(false);
@@ -75,7 +76,7 @@ const displayTracks = computed(() => {
     return {
       ...track,
       releaseTitle: release?.title ?? track.releaseLabel,
-      artworkUrl: resolveMediaUrl(release?.artworkUrl ?? ""),
+      artworkUrl: resolveMediaUrl(track.artworkPath || release?.artworkUrl || ""),
       durationLabel: formatTime(track.duration ?? 0),
       lyrics: track.lyrics || release?.notes || text.value.player.noLyrics
     };
@@ -159,8 +160,12 @@ function handleMainScroll() {
 onMounted(async () => {
   try {
     await auth.hydrate();
+    const session = await api.getCurrentUser();
+    auth.setUser(session.user);
   } catch (error) {
-    statusMessage.value = error.message;
+    if (error?.status !== 401) {
+      statusMessage.value = error.message;
+    }
   }
 
   await refreshCatalog();
@@ -199,14 +204,25 @@ async function refreshCatalog() {
 
 async function refreshAdminData() {
   if (!isAdmin.value) return;
-  const [tracksResponse, releasesResponse, mediaResponse] = await Promise.all([
-    api.getAdminTracks(),
-    api.getAdminReleases(),
-    api.getAdminMedia()
-  ]);
-  player.setTracks(tracksResponse.items);
-  releases.value = releasesResponse.items;
-  mediaAssets.value = mediaResponse.items;
+  try {
+    const [tracksResponse, releasesResponse, mediaResponse] = await Promise.all([
+      api.getAdminTracks(),
+      api.getAdminReleases(),
+      api.getAdminMedia()
+    ]);
+    player.setTracks(tracksResponse.items);
+    releases.value = releasesResponse.items;
+    mediaAssets.value = mediaResponse.items;
+  } catch (error) {
+    if (error?.status === 401 || error?.status === 403) {
+      auth.logout();
+      loginPanelOpen.value = true;
+      statusMessage.value = "Admin session expired or invalid. Please log in again.";
+      return;
+    }
+
+    statusMessage.value = error.message;
+  }
 }
 
 async function togglePlayback() {
@@ -317,6 +333,10 @@ function openTrackMediaPicker() {
 
 function openReleaseMediaPicker() {
   releaseMediaFileRef.value?.click();
+}
+
+function openTrackArtworkPicker() {
+  trackArtworkFileRef.value?.click();
 }
 
 function openPlayer() {
@@ -437,10 +457,19 @@ function onFilesSelected(event) {
 async function submitLogin() {
   loginError.value = "";
   try {
-    await auth.login(loginForm);
+    if (loginForm.email && loginForm.password) {
+      const response = await api.login({
+        email: loginForm.email,
+        password: loginForm.password
+      });
+      auth.setUser(response.user);
+    } else {
+      await auth.login({ accessCode: loginForm.password });
+    }
     await refreshAdminData();
     loginForm.email = "";
     loginForm.password = "";
+    loginPanelOpen.value = false;
   } catch (error) {
     loginError.value = error.message;
   }
@@ -495,7 +524,17 @@ async function onReleaseMediaSelected(event) {
 async function submitTrack() {
   adminBusy.value = true;
   try {
-    const payload = { title: trackForm.title, artist: trackForm.artist, mood: trackForm.mood, duration: Number(trackForm.duration), visibility: trackForm.visibility, audioPath: trackForm.audioPath, releaseLabel: trackForm.releaseLabel };
+    const payload = {
+      title: trackForm.title,
+      artist: trackForm.artist,
+      mood: trackForm.mood,
+      duration: Number(trackForm.duration),
+      visibility: trackForm.visibility,
+      audioPath: trackForm.audioPath,
+      artworkPath: trackForm.artworkPath,
+      releaseLabel: trackForm.releaseLabel,
+      lyrics: trackForm.lyrics
+    };
     const response = trackForm.id ? await api.updateTrack(trackForm.id, payload) : await api.createTrack(payload);
     player.upsertTrack(response.item);
     Object.assign(trackForm, emptyTrack());
@@ -533,7 +572,18 @@ async function submitRelease() {
 }
 
 function editTrack(track) {
-  Object.assign(trackForm, { id: track.id, title: track.title, artist: track.artist, mood: track.mood, duration: String(track.duration), visibility: track.visibility, audioPath: track.audioPath ?? track.storageKey ?? "", releaseLabel: track.releaseLabel });
+  Object.assign(trackForm, {
+    id: track.id,
+    title: track.title,
+    artist: track.artist,
+    mood: track.mood,
+    duration: String(track.duration),
+    visibility: track.visibility,
+    audioPath: track.audioPath ?? track.storageKey ?? "",
+    artworkPath: track.artworkPath ?? "",
+    releaseLabel: track.releaseLabel,
+    lyrics: track.lyrics ?? ""
+  });
 }
 
 function editRelease(release) {
@@ -554,8 +604,34 @@ async function removeRelease(releaseId) {
 }
 
 async function logout() {
-  await auth.logout();
+  try {
+    await api.logout();
+  } catch {}
+  auth.logout();
   await refreshCatalog();
+}
+
+async function onTrackArtworkSelected(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+
+  trackUploadBusy.value = true;
+  statusMessage.value = "";
+
+  try {
+    const response = await api.uploadMedia({
+      file,
+      category: "artwork"
+    });
+    mediaAssets.value = [response.item, ...mediaAssets.value];
+    trackForm.artworkPath = response.item.path ?? response.item.url;
+    statusMessage.value = "Track artwork upload completed.";
+  } catch (error) {
+    statusMessage.value = error.message;
+  } finally {
+    trackUploadBusy.value = false;
+    event.target.value = "";
+  }
 }
 
 function upsertRelease(release) {
@@ -568,7 +644,18 @@ function upsertRelease(release) {
 }
 
 function emptyTrack() {
-  return { id: "", title: "", artist: "Patrizio Milione", mood: "Pop", duration: "180", visibility: "public", audioPath: "", releaseLabel: "Single" };
+  return {
+    id: "",
+    title: "",
+    artist: "Patrizio Milione",
+    mood: "Pop",
+    duration: "180",
+    visibility: "public",
+    audioPath: "",
+    artworkPath: "",
+    releaseLabel: "Single",
+    lyrics: ""
+  };
 }
 
 function emptyRelease() {
@@ -841,6 +928,24 @@ function setAdminCards(value) {
               <p v-if="trackUploadBusy" class="admin-help">{{ text.admin.uploading }}</p>
             </div>
 
+            <div class="admin-media-section">
+              <div class="card-head">
+                <div>
+                  <p class="eyebrow">{{ text.admin.mediaUpload }}</p>
+                  <h4>{{ text.admin.uploadArtwork }}</h4>
+                </div>
+                <button class="admin-secondary-action" type="button" @click="openTrackArtworkPicker">
+                  {{ text.admin.uploadArtwork }}
+                </button>
+              </div>
+              <input ref="trackArtworkFileRef" class="hidden-file-input" type="file" accept="image/*" @change="onTrackArtworkSelected" />
+              <label class="field field-wide">
+                <span>{{ text.admin.artworkPath }}</span>
+                <input v-model="trackForm.artworkPath" type="text" />
+              </label>
+              <p class="admin-help">{{ text.admin.artworkPathHelp }}</p>
+            </div>
+
             <div class="admin-form-grid">
               <label class="field">
                 <span>{{ text.admin.title }}</span>
@@ -870,6 +975,11 @@ function setAdminCards(value) {
                 <input v-model="trackForm.releaseLabel" type="text" />
               </label>
             </div>
+
+            <label class="field field-wide">
+              <span>{{ text.player.lyrics }}</span>
+              <textarea v-model="trackForm.lyrics" rows="4" />
+            </label>
 
             <button class="login-action" type="button" :disabled="adminBusy" @click="submitTrack">
               {{ adminBusy ? text.admin.saving : text.admin.saveTrack }}
