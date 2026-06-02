@@ -91,13 +91,13 @@ function onTouchEnd(event) {
                 v-else
                 class="mp-art mp-art-fallback"
                 :style="{
-                backgroundImage: `linear-gradient(135deg, ${(track?.accent ?? ['#1a1a2e','#0f3460']).join(', ')})`
+                backgroundImage: `linear-gradient(135deg, ${(track?.accent ?? ['var(--cover-start)','var(--cover-end)']).join(', ')})`
               }"
             >
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <path d="M5 10V4l6-1v6" stroke="rgba(255,255,255,0.5)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
-                <circle cx="3.5" cy="10" r="1.5" stroke="rgba(255,255,255,0.5)" stroke-width="1.2"/>
-                <circle cx="9.5" cy="9" r="1.5" stroke="rgba(255,255,255,0.5)" stroke-width="1.2"/>
+                <path d="M5 10V4l6-1v6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="3.5" cy="10" r="1.5" stroke="currentColor" stroke-width="1.2"/>
+                <circle cx="9.5" cy="9" r="1.5" stroke="currentColor" stroke-width="1.2"/>
               </svg>
             </div>
             <!-- Vinyl spin ring when playing -->
@@ -160,6 +160,11 @@ function onTouchEnd(event) {
 <style scoped>
 /* ── Outer wrap ──────────────────────────────────────── */
 .mp-wrap {
+  --mp-surface: color-mix(in srgb, var(--panel) 92%, var(--page-text) 4%);
+  --mp-surface-strong: color-mix(in srgb, var(--panel) 84%, var(--page-text) 8%);
+  --mp-hover: color-mix(in srgb, var(--accent-soft) 62%, var(--panel-muted));
+  --mp-track: color-mix(in srgb, var(--line-soft) 68%, transparent);
+  --mp-shadow: color-mix(in srgb, var(--accent-strong) 16%, rgba(0, 0, 0, 0.22));
   position: fixed;
   bottom: 24px;
   left: 16px;
@@ -181,12 +186,12 @@ function onTouchEnd(event) {
   pointer-events: all;
   width: 28px;
   height: 64px;
-  background: rgba(20, 20, 26, 0.9);
+  background: var(--mp-surface);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 0.5px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--panel-border);
   border-radius: 0 12px 12px 0;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--text-muted);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -194,8 +199,8 @@ function onTouchEnd(event) {
   transition: background 0.15s, color 0.15s;
 }
 .mp-tab:hover {
-  background: rgba(30, 30, 38, 0.95);
-  color: #fff;
+  background: var(--mp-surface-strong);
+  color: var(--page-text);
 }
 
 /* ── Main pill ───────────────────────────────────────── */
@@ -203,20 +208,22 @@ function onTouchEnd(event) {
   pointer-events: all;
   width: 100%;
   max-width: 480px;
-  background: rgba(16, 16, 22, 0.92);
+  background:
+      linear-gradient(180deg, color-mix(in srgb, var(--panel) 86%, transparent), var(--panel-muted)),
+      var(--mp-surface);
   backdrop-filter: blur(40px) saturate(160%);
   -webkit-backdrop-filter: blur(40px) saturate(160%);
-  border: 0.5px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--panel-border);
   border-radius: 20px;
   overflow: hidden;
   box-shadow:
-      0 24px 48px rgba(0, 0, 0, 0.4),
-      0 8px 16px rgba(0, 0, 0, 0.3),
-      inset 0 0.5px 0 rgba(255, 255, 255, 0.1);
+      0 24px 48px var(--mp-shadow),
+      0 8px 16px color-mix(in srgb, var(--accent-strong) 10%, transparent),
+      inset 0 1px 0 color-mix(in srgb, #fff 16%, transparent);
   transition:
       transform 0.5s cubic-bezier(0.22, 1, 0.36, 1),
       opacity 0.4s ease;
-  color: #fff;
+  color: var(--page-text);
 }
 
 .mp-pill-hidden {
@@ -228,7 +235,7 @@ function onTouchEnd(event) {
 /* ── Progress bar (top edge) ─────────────────────────── */
 .mp-progress-bar {
   height: 2px;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--mp-track);
   position: relative;
 }
 
@@ -236,7 +243,7 @@ function onTouchEnd(event) {
   position: absolute;
   left: 0; top: 0;
   height: 100%;
-  background: rgba(255, 255, 255, 0.6);
+  background: linear-gradient(90deg, var(--accent), var(--accent-strong));
   border-radius: 0;
   transition: width 0.1s linear;
 }
@@ -255,7 +262,7 @@ function onTouchEnd(event) {
   height: 28px;
   border: none;
   background: none;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--text-muted);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -265,8 +272,8 @@ function onTouchEnd(event) {
   transition: color 0.15s, background 0.15s;
 }
 .mp-collapse-btn:hover {
-  color: rgba(255, 255, 255, 0.7);
-  background: rgba(255, 255, 255, 0.06);
+  color: var(--page-text);
+  background: var(--mp-hover);
 }
 
 /* ── Track button ────────────────────────────────────── */
@@ -300,13 +307,14 @@ function onTouchEnd(event) {
   border-radius: 10px;
   object-fit: cover;
   display: block;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--accent-strong) 18%, transparent);
 }
 
 .mp-art-fallback {
   display: flex;
   align-items: center;
   justify-content: center;
+  color: color-mix(in srgb, var(--button-text-strong) 72%, transparent);
 }
 
 .mp-art-spin {
@@ -314,8 +322,8 @@ function onTouchEnd(event) {
   inset: -3px;
   border-radius: 13px;
   border: 1.5px solid transparent;
-  border-top-color: rgba(255, 255, 255, 0.4);
-  border-right-color: rgba(255, 255, 255, 0.15);
+  border-top-color: var(--accent);
+  border-right-color: color-mix(in srgb, var(--accent) 28%, transparent);
   animation: mp-spin 2s linear infinite;
   pointer-events: none;
 }
@@ -330,7 +338,7 @@ function onTouchEnd(event) {
 .mp-title {
   font-size: 13px;
   font-weight: 600;
-  color: #fff;
+  color: var(--page-text);
   margin: 0 0 2px;
   white-space: nowrap;
   overflow: hidden;
@@ -340,7 +348,7 @@ function onTouchEnd(event) {
 
 .mp-artist {
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--text-muted);
   margin: 0;
   white-space: nowrap;
   overflow: hidden;
@@ -350,7 +358,7 @@ function onTouchEnd(event) {
 /* ── Time ────────────────────────────────────────────── */
 .mp-time {
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--text-muted);
   font-variant-numeric: tabular-nums;
   flex-shrink: 0;
   padding: 0 4px;
@@ -369,7 +377,7 @@ function onTouchEnd(event) {
   height: 36px;
   border: none;
   background: none;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--text-muted);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -378,20 +386,22 @@ function onTouchEnd(event) {
   transition: color 0.15s, background 0.15s, transform 0.1s;
 }
 .mp-ctrl:hover {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.06);
+  color: var(--page-text);
+  background: var(--mp-hover);
 }
 .mp-ctrl:active { transform: scale(0.88); }
 
 .mp-ctrl-play {
   width: 40px;
   height: 40px;
-  background: rgba(255, 255, 255, 0.12);
-  color: #fff;
+  background: var(--accent);
+  color: var(--button-text-strong);
   border-radius: 50%;
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--accent) 24%, transparent);
 }
 .mp-ctrl-play:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--accent-strong);
+  color: var(--button-text-strong);
 }
 .mp-ctrl-play:disabled {
   opacity: 0.35;

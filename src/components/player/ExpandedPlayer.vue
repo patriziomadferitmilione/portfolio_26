@@ -1,8 +1,9 @@
 <script setup>
+import { onBeforeUnmount, watch } from "vue";
 import Button from "primevue/button";
 import Slider from "primevue/slider";
 
-defineProps({
+const props = defineProps({
   open: { type: Boolean, default: false },
   track: { type: Object, default: null },
   releaseTitle: { type: String, default: "" },
@@ -25,6 +26,53 @@ defineEmits([
   "toggle-shuffle", "cycle-repeat",
   "volume-change", "seek", "select-track"
 ]);
+
+const bodyScrollState = {
+  locked: false,
+  overflow: "",
+  paddingRight: ""
+};
+
+function lockBodyScroll() {
+  if (typeof document === "undefined" || bodyScrollState.locked) {
+    return;
+  }
+
+  const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+  bodyScrollState.overflow = document.body.style.overflow;
+  bodyScrollState.paddingRight = document.body.style.paddingRight;
+  bodyScrollState.locked = true;
+
+  document.body.style.overflow = "hidden";
+  if (scrollbarWidth > 0) {
+    document.body.style.paddingRight = `${scrollbarWidth}px`;
+  }
+}
+
+function unlockBodyScroll() {
+  if (typeof document === "undefined" || !bodyScrollState.locked) {
+    return;
+  }
+
+  document.body.style.overflow = bodyScrollState.overflow;
+  document.body.style.paddingRight = bodyScrollState.paddingRight;
+  bodyScrollState.locked = false;
+}
+
+watch(
+  () => props.open,
+  (open) => {
+    if (open) {
+      lockBodyScroll();
+      return;
+    }
+
+    unlockBodyScroll();
+  },
+  { immediate: true }
+);
+
+onBeforeUnmount(unlockBodyScroll);
 </script>
 
 <template>
@@ -40,7 +88,7 @@ defineEmits([
             :style="{
             backgroundImage: track?.artworkUrl
               ? `url(${track.artworkUrl})`
-              : `linear-gradient(135deg, ${(track?.accent ?? ['#1a1a2e','#16213e','#0f3460']).join(', ')})`
+              : `linear-gradient(135deg, ${(track?.accent ?? ['var(--cover-start)','var(--cover-mid)','var(--cover-end)']).join(', ')})`
           }"
         />
         <div class="ps-bg-overlay" />
@@ -70,14 +118,14 @@ defineEmits([
               :style="{
               backgroundImage: track?.artworkUrl
                 ? `url(${track.artworkUrl})`
-                : `linear-gradient(135deg, ${(track?.accent ?? ['#1a1a2e','#0f3460']).join(', ')})`
+                : `linear-gradient(135deg, ${(track?.accent ?? ['var(--cover-start)','var(--cover-end)']).join(', ')})`
             }"
           >
             <div v-if="!track?.artworkUrl" class="ps-artwork-note">
               <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-                <path d="M18 34V14l22-4v20" stroke="rgba(255,255,255,0.4)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <circle cx="14" cy="34" r="4" stroke="rgba(255,255,255,0.4)" stroke-width="2"/>
-                <circle cx="36" cy="30" r="4" stroke="rgba(255,255,255,0.4)" stroke-width="2"/>
+                <path d="M18 34V14l22-4v20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="14" cy="34" r="4" stroke="currentColor" stroke-width="2"/>
+                <circle cx="36" cy="30" r="4" stroke="currentColor" stroke-width="2"/>
               </svg>
             </div>
           </div>
@@ -229,18 +277,24 @@ defineEmits([
 <style scoped>
 /* ── Root & Backdrop ─────────────────────────────────── */
 .ps-root {
+  --ps-surface: color-mix(in srgb, var(--panel) 94%, var(--page-text) 3%);
+  --ps-surface-strong: color-mix(in srgb, var(--panel) 84%, var(--page-text) 7%);
+  --ps-hover: color-mix(in srgb, var(--accent-soft) 70%, var(--panel-muted));
+  --ps-track: color-mix(in srgb, var(--line-soft) 72%, transparent);
+  --ps-shadow: color-mix(in srgb, var(--accent-strong) 18%, rgba(0, 0, 0, 0.28));
   position: fixed;
   inset: 0;
   z-index: 1000;
   display: flex;
   align-items: flex-end;
   justify-content: center;
+  overscroll-behavior: none;
 }
 
 .ps-backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.7);
+  background: color-mix(in srgb, var(--page-text) 36%, transparent);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   border: none;
@@ -255,13 +309,18 @@ defineEmits([
   max-height: 92vh;
   overflow-y: auto;
   overflow-x: hidden;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   border-radius: 28px 28px 0 0;
-  background: rgba(12, 12, 16, 0.92);
+  background:
+      linear-gradient(180deg, color-mix(in srgb, var(--panel) 92%, transparent), var(--panel-muted)),
+      var(--ps-surface);
   backdrop-filter: blur(40px) saturate(180%);
   -webkit-backdrop-filter: blur(40px) saturate(180%);
-  border-top: 0.5px solid rgba(255, 255, 255, 0.1);
-  color: #fff;
+  border-top: 1px solid var(--panel-border);
+  color: var(--page-text);
   padding-bottom: 40px;
+  box-shadow: 0 -24px 72px var(--ps-shadow);
 
   scrollbar-width: none;
   &::-webkit-scrollbar { display: none; }
@@ -274,7 +333,7 @@ defineEmits([
   background-size: cover;
   background-position: center;
   filter: blur(80px) saturate(200%);
-  opacity: 0.25;
+  opacity: 0.16;
   border-radius: inherit;
   pointer-events: none;
   z-index: 0;
@@ -285,9 +344,9 @@ defineEmits([
   inset: 0;
   background: linear-gradient(
       to bottom,
-      rgba(12, 12, 16, 0.3) 0%,
-      rgba(12, 12, 16, 0.85) 60%,
-      rgba(12, 12, 16, 0.98) 100%
+      color-mix(in srgb, var(--panel) 34%, transparent) 0%,
+      color-mix(in srgb, var(--panel) 86%, transparent) 60%,
+      var(--ps-surface) 100%
   );
   pointer-events: none;
   z-index: 1;
@@ -308,16 +367,16 @@ defineEmits([
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--text-muted);
 }
 
 .ps-icon-btn {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  border: none;
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.7);
+  border: 1px solid var(--panel-border);
+  background: var(--ps-surface-strong);
+  color: var(--text-muted);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -325,8 +384,8 @@ defineEmits([
   transition: background 0.15s, color 0.15s, transform 0.1s;
 }
 .ps-icon-btn:hover {
-  background: rgba(255, 255, 255, 0.15);
-  color: #fff;
+  background: var(--ps-hover);
+  color: var(--page-text);
 }
 .ps-icon-btn:active { transform: scale(0.94); }
 
@@ -348,18 +407,22 @@ defineEmits([
   align-items: center;
   justify-content: center;
   box-shadow:
-      0 32px 64px rgba(0, 0, 0, 0.5),
-      0 8px 24px rgba(0, 0, 0, 0.3),
-      inset 0 0 0 0.5px rgba(255, 255, 255, 0.1);
+      0 32px 64px var(--ps-shadow),
+      0 8px 24px color-mix(in srgb, var(--accent-strong) 14%, transparent),
+      inset 0 0 0 1px var(--panel-border);
   transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.4s ease;
 }
 
 .ps-artwork.playing {
   transform: scale(1.04);
   box-shadow:
-      0 40px 80px rgba(0, 0, 0, 0.6),
-      0 12px 32px rgba(0, 0, 0, 0.4),
-      inset 0 0 0 0.5px rgba(255, 255, 255, 0.15);
+      0 40px 80px color-mix(in srgb, var(--accent) 22%, transparent),
+      0 12px 32px var(--ps-shadow),
+      inset 0 0 0 1px color-mix(in srgb, var(--accent) 34%, var(--panel-border));
+}
+
+.ps-artwork-note {
+  color: color-mix(in srgb, var(--button-text-strong) 72%, transparent);
 }
 
 /* ── Track Info ──────────────────────────────────────── */
@@ -372,7 +435,7 @@ defineEmits([
   font-size: 22px;
   font-weight: 700;
   letter-spacing: -0.02em;
-  color: #fff;
+  color: var(--page-text);
   margin: 0 0 4px;
   white-space: nowrap;
   overflow: hidden;
@@ -381,7 +444,7 @@ defineEmits([
 
 .ps-track-artist {
   font-size: 15px;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--text-muted);
   margin: 0;
 }
 
@@ -393,7 +456,7 @@ defineEmits([
 .ps-seek-track {
   position: relative;
   height: 4px;
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--ps-track);
   border-radius: 2px;
   cursor: pointer;
   margin-bottom: 8px;
@@ -404,7 +467,7 @@ defineEmits([
   left: 0;
   top: 0;
   height: 100%;
-  background: #fff;
+  background: linear-gradient(90deg, var(--accent), var(--accent-strong));
   border-radius: 2px;
   transition: width 0.1s linear;
   pointer-events: none;
@@ -416,7 +479,8 @@ defineEmits([
   transform: translate(-50%, -50%) scale(0);
   width: 14px;
   height: 14px;
-  background: #fff;
+  background: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent);
   border-radius: 50%;
   pointer-events: none;
   transition: transform 0.15s ease, left 0.1s linear;
@@ -428,7 +492,7 @@ defineEmits([
   display: flex;
   justify-content: space-between;
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--text-muted);
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.02em;
 }
@@ -443,9 +507,9 @@ defineEmits([
 }
 
 .ps-ctrl-btn {
-  border: none;
+  border: 1px solid transparent;
   background: none;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--text-muted);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -454,7 +518,7 @@ defineEmits([
   transition: color 0.15s, background 0.15s, transform 0.1s;
   flex-shrink: 0;
 }
-.ps-ctrl-btn:hover { color: #fff; }
+.ps-ctrl-btn:hover { color: var(--page-text); }
 .ps-ctrl-btn:active { transform: scale(0.9); }
 
 .ps-ctrl-sm {
@@ -462,35 +526,36 @@ defineEmits([
 }
 .ps-ctrl-md {
   width: 48px; height: 48px;
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.8);
+  background: var(--ps-surface-strong);
+  border-color: var(--panel-border);
+  color: var(--page-text);
 }
-.ps-ctrl-md:hover { background: rgba(255, 255, 255, 0.12); color: #fff; }
+.ps-ctrl-md:hover { background: var(--ps-hover); color: var(--page-text); }
 
 .ps-ctrl-play {
   width: 68px;
   height: 68px;
-  background: #fff;
-  color: #0c0c10;
+  background: var(--accent);
+  color: var(--button-text-strong);
   border-radius: 50%;
-  box-shadow: 0 8px 24px rgba(255, 255, 255, 0.15);
+  box-shadow: 0 12px 30px color-mix(in srgb, var(--accent) 30%, transparent);
   transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
 }
 .ps-ctrl-play:hover {
-  background: #f0f0f0;
-  box-shadow: 0 12px 32px rgba(255, 255, 255, 0.25);
+  background: var(--accent-strong);
+  box-shadow: 0 16px 36px color-mix(in srgb, var(--accent-strong) 32%, transparent);
   transform: scale(1.04);
 }
 .ps-ctrl-play:active { transform: scale(0.95); }
 .ps-ctrl-play:disabled {
-  background: rgba(255, 255, 255, 0.2);
-  color: rgba(255, 255, 255, 0.4);
+  background: var(--ps-track);
+  color: var(--text-muted);
   cursor: not-allowed;
   box-shadow: none;
 }
 
-.ps-ctrl-active { color: #fff !important; }
-.ps-ctrl-active svg { filter: drop-shadow(0 0 6px rgba(255,255,255,0.6)); }
+.ps-ctrl-active { color: var(--accent) !important; }
+.ps-ctrl-active svg { filter: drop-shadow(0 0 6px color-mix(in srgb, var(--accent) 54%, transparent)); }
 
 /* ── Volume ──────────────────────────────────────────── */
 .ps-volume-row {
@@ -498,14 +563,14 @@ defineEmits([
   align-items: center;
   gap: 10px;
   padding: 8px 28px 24px;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--text-muted);
 }
 
 .ps-volume-slider {
   flex: 1;
   position: relative;
   height: 4px;
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--ps-track);
   border-radius: 2px;
 }
 
@@ -513,7 +578,7 @@ defineEmits([
   position: absolute;
   left: 0; top: 0;
   height: 100%;
-  background: rgba(255, 255, 255, 0.5);
+  background: linear-gradient(90deg, var(--accent), var(--accent-strong));
   border-radius: 2px;
   pointer-events: none;
   transition: width 0.05s;
@@ -542,26 +607,26 @@ defineEmits([
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.35);
+  color: var(--text-muted);
 }
 
 .ps-queue-count {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.25);
+  color: var(--text-muted);
 }
 
 /* ── Lyrics ──────────────────────────────────────────── */
 .ps-lyrics {
   margin: 0 20px 28px;
   padding: 20px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 0.5px solid rgba(255, 255, 255, 0.07);
+  background: var(--ps-surface-strong);
+  border: 1px solid var(--panel-border);
   border-radius: 16px;
 }
 .ps-lyrics p {
   font-size: 15px;
   line-height: 1.8;
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--text-muted);
   white-space: pre-wrap;
   margin: 0;
 }
@@ -580,7 +645,7 @@ defineEmits([
   gap: 12px;
   padding: 10px 12px;
   border-radius: 12px;
-  border: none;
+  border: 1px solid transparent;
   background: none;
   color: inherit;
   cursor: pointer;
@@ -588,8 +653,11 @@ defineEmits([
   transition: background 0.15s;
   width: 100%;
 }
-.ps-queue-item:hover { background: rgba(255, 255, 255, 0.06); }
-.ps-queue-item.active { background: rgba(255, 255, 255, 0.08); }
+.ps-queue-item:hover { background: var(--ps-hover); }
+.ps-queue-item.active {
+  background: var(--accent-soft);
+  border-color: color-mix(in srgb, var(--accent) 30%, var(--panel-border));
+}
 
 .ps-queue-art {
   width: 44px;
@@ -598,14 +666,14 @@ defineEmits([
   background-size: cover;
   background-position: center;
   flex-shrink: 0;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--accent-strong) 16%, transparent);
 }
 
 .ps-queue-meta { flex: 1; min-width: 0; }
 .ps-queue-title {
   font-size: 14px;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--page-text);
   margin: 0 0 2px;
   white-space: nowrap;
   overflow: hidden;
@@ -613,10 +681,10 @@ defineEmits([
 }
 .ps-queue-artist {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.35);
+  color: var(--text-muted);
 }
 
-.ps-queue-item.active .ps-queue-title { color: #fff; }
+.ps-queue-item.active .ps-queue-title { color: var(--page-text); }
 
 /* ── Animated playing bars ───────────────────────────── */
 .ps-queue-playing {
@@ -629,7 +697,7 @@ defineEmits([
 .ps-queue-playing span {
   display: block;
   width: 3px;
-  background: rgba(255, 255, 255, 0.6);
+  background: var(--accent);
   border-radius: 1.5px;
   animation: ps-bar 0.8s ease-in-out infinite alternate;
 }
