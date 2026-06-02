@@ -25,10 +25,19 @@ defineEmits(["select-track", "toggle-track", "toggle-shuffle"]);
           :aria-label="shuffleEnabled ? 'Disable shuffle' : 'Enable shuffle'"
           :title="shuffleEnabled ? 'Disable shuffle' : 'Enable shuffle'"
           @click="$emit('toggle-shuffle')"
-        />
+        >
+          <svg class="shuffle-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M3 7h2.8c2.4 0 3.5 1.1 5.2 5s2.8 5 5.2 5H21" />
+            <path d="M18 14l3 3-3 3" />
+            <path d="M3 17h2.8c1.4 0 2.4-.4 3.2-1.4" />
+            <path d="M14 8.4c.7-.9 1.7-1.4 3.2-1.4H21" />
+            <path d="M18 4l3 3-3 3" />
+          </svg>
+        </button>
       </header>
 
       <div v-if="catalogLoading" class="empty-state">{{ text.music.loadingTracks }}</div>
+      <div v-else-if="!tracks.length" class="empty-state">{{ text.admin.noTracksYet }}</div>
       <div v-else class="songs">
         <button
           v-for="track in tracks"
@@ -57,7 +66,11 @@ defineEmits(["select-track", "toggle-track", "toggle-shuffle"]);
               :aria-label="track.id === currentTrackId && isPlaying ? 'Pause track' : 'Play track'"
               @click.stop="$emit('toggle-track', track.id)"
             >
-              <i :class="track.id === currentTrackId && isPlaying ? 'pi pi-pause' : 'pi pi-play'" />
+              <span
+                class="song-action-icon"
+                :class="track.id === currentTrackId && isPlaying ? 'pause' : 'play'"
+                aria-hidden="true"
+              />
             </button>
           </div>
         </button>
@@ -140,6 +153,16 @@ defineEmits(["select-track", "toggle-track", "toggle-shuffle"]);
 
 .shuffle-toggle:hover {
   transform: translateY(-1px);
+}
+
+.shuffle-icon {
+  width: 1.35rem;
+  height: 1.35rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .songs {
@@ -236,24 +259,63 @@ defineEmits(["select-track", "toggle-track", "toggle-shuffle"]);
 }
 
 .song-action {
-  width: 2.5rem;
-  height: 2.5rem;
-  border: 0;
+  width: 2.65rem;
+  height: 2.65rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 24%, transparent);
   border-radius: 999px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: var(--accent-soft);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--panel) 62%, transparent), transparent),
+    var(--accent-soft);
   color: var(--accent);
   cursor: pointer;
-  font-size: 1rem;
   line-height: 1;
-  transition: transform 180ms ease, background-color 180ms ease;
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--accent) 16%, transparent);
+  transition: transform 180ms ease, background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
 }
 
 .song-action:hover {
   transform: scale(1.04);
   background: var(--panel-muted);
+  border-color: color-mix(in srgb, var(--accent) 42%, var(--panel-border));
+  box-shadow: 0 14px 30px color-mix(in srgb, var(--accent) 20%, transparent);
+}
+
+.song-action-icon {
+  position: relative;
+  display: block;
+  width: 1rem;
+  height: 1rem;
+}
+
+.song-action-icon.play {
+  width: 0;
+  height: 0;
+  margin-left: 0.16rem;
+  border-top: 0.42rem solid transparent;
+  border-bottom: 0.42rem solid transparent;
+  border-left: 0.68rem solid currentColor;
+}
+
+.song-action-icon.pause::before,
+.song-action-icon.pause::after {
+  content: "";
+  position: absolute;
+  top: 0.12rem;
+  width: 0.28rem;
+  height: 0.76rem;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.song-action-icon.pause::before {
+  left: 0.24rem;
+}
+
+.song-action-icon.pause::after {
+  right: 0.24rem;
 }
 
 @media (max-width: 699px) {

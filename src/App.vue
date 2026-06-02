@@ -65,9 +65,10 @@ const musicDemoTracks = [
 const formattedDuration = computed(() => formatTime(currentTrack.value?.duration ?? 0));
 const formattedTime = computed(() => formatTime(currentTime.value));
 const text = computed(() => messages[locale.value]);
+const fallbackTracks = computed(() => (import.meta.env.DEV ? musicDemoTracks : []));
 const displayTracks = computed(() => {
   if (!tracks.value.length) {
-    return musicDemoTracks;
+    return fallbackTracks.value;
   }
 
   return tracks.value.map((track) => {
@@ -843,7 +844,7 @@ function setAdminCards(value) {
             aria-label="Toggle track form"
             @click="toggleAdminCard('track')"
           >
-            <i class="pi pi-music" />
+            <i class="pi pi-file-plus" />
           </button>
           <button
             class="admin-view-toggle"
