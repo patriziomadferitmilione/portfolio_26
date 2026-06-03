@@ -69,15 +69,11 @@ function handleLoginOpen() {
       <i class="pi pi-bars" />
     </button>
 
-    <div class="site-title" :class="{ hidden: menuOpen }" aria-label="Patrizio Milione">
-      <span class="site-title-mark" aria-hidden="true">
-        <span />
-        <span />
-      </span>
+    <div class="site-title" :class="{ hidden: menuOpen }" :aria-label="text.app.eyebrow">
       <div class="site-title-copy">
         <p class="site-title-name">
-          <span>{{ nameParts.firstName }}</span>
-          <strong>{{ nameParts.lastName }}</strong>
+          <strong>{{ nameParts.firstName }}</strong>
+          <span>{{ nameParts.lastName }}</span>
         </p>
         <p class="site-title-subtitle">{{ text.music.eyebrow }}</p>
       </div>
@@ -125,8 +121,8 @@ function handleLoginOpen() {
   display: grid;
   gap: 0.9rem;
   justify-items: center;
-  margin-bottom: 1.5rem;
-  padding-top: 0.25rem;
+  margin-bottom: 2.5rem;
+  padding-top: 0.5rem;
 }
 
 .site-title.hidden {
@@ -137,52 +133,28 @@ function handleLoginOpen() {
 .site-title {
   display: inline-flex;
   align-items: center;
-  gap: 0.8rem;
-  min-height: 3.4rem;
-  max-width: calc(100% - 4.4rem);
+  gap: 1.15rem;
+  min-height: 7rem;
+  max-width: calc(100% - 4.8rem);
   color: var(--page-text);
   transition: opacity 180ms ease, visibility 180ms ease, transform 180ms ease;
 }
 
-.site-title-mark {
-  position: relative;
-  width: 2.75rem;
-  height: 2.75rem;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  border: 1px solid color-mix(in srgb, var(--accent) 34%, var(--panel-border));
-  background:
-    radial-gradient(circle at 34% 24%, color-mix(in srgb, var(--accent) 24%, transparent), transparent 48%),
-    color-mix(in srgb, var(--panel-muted) 88%, var(--accent-soft));
-  box-shadow: 0 0.75rem 1.8rem color-mix(in srgb, var(--accent-strong) 14%, transparent);
+.site-title-icons {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 0.58rem;
+  color: var(--accent);
 }
 
-.site-title-mark::before {
-  content: "";
-  width: 1.25rem;
-  height: 1.25rem;
-  border: 1.5px solid var(--accent);
-  border-radius: 50%;
+.site-title-icons i:first-child {
+  font-size: 2rem;
+  color: var(--accent-strong);
 }
 
-.site-title-mark span {
-  position: absolute;
-  display: block;
-  width: 0.34rem;
-  border-radius: 999px;
-  background: var(--accent-strong);
-}
-
-.site-title-mark span:first-child {
-  height: 1.5rem;
-  transform: translateX(-0.23rem) rotate(18deg);
-}
-
-.site-title-mark span:last-child {
-  height: 1rem;
-  transform: translateX(0.34rem) translateY(0.18rem) rotate(18deg);
-  opacity: 0.72;
+.site-title-icons i:last-child {
+  font-size: 2.65rem;
 }
 
 .site-title-copy {
@@ -199,8 +171,8 @@ function handleLoginOpen() {
 .site-title-name {
   display: flex;
   align-items: baseline;
-  gap: 0.34rem;
-  font-size: clamp(1.15rem, 2vw, 1.45rem);
+  gap: 0.68rem;
+  font-size: clamp(3.2rem, 8vw, 6.2rem);
   line-height: 1;
   letter-spacing: 0;
 }
@@ -211,12 +183,12 @@ function handleLoginOpen() {
 }
 
 .site-title-name strong {
-  font-weight: 800;
+  font-weight: 850;
   color: var(--page-text);
 }
 
 .site-title-subtitle {
-  font-size: 0.72rem;
+  font-size: clamp(0.82rem, 1.35vw, 1.08rem);
   font-weight: 700;
   line-height: 1.15;
   letter-spacing: 0;
@@ -227,27 +199,37 @@ function handleLoginOpen() {
 @media (max-width: 430px) {
   .mode-header {
     justify-items: start;
+    margin-bottom: 1.6rem;
     padding-right: 4.25rem;
   }
 
   .site-title {
     max-width: 100%;
+    min-height: 4.4rem;
     gap: 0.62rem;
   }
 
-  .site-title-mark {
-    width: 2.45rem;
-    height: 2.45rem;
+  .site-title-icons {
+    gap: 0.24rem;
+  }
+
+  .site-title-icons i:first-child {
+    font-size: 1.15rem;
+  }
+
+  .site-title-icons i:last-child {
+    font-size: 1.45rem;
   }
 
   .site-title-name {
     flex-wrap: wrap;
+    column-gap: 0.34rem;
     row-gap: 0.08rem;
-    font-size: 1.08rem;
+    font-size: clamp(1.95rem, 10vw, 2.7rem);
   }
 
   .site-title-subtitle {
-    font-size: 0.68rem;
+    font-size: 0.76rem;
   }
 }
 

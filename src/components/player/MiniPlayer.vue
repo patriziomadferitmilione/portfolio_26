@@ -178,6 +178,8 @@ function onTouchEnd(event) {
 }
 
 .mp-wrap.mp-hidden {
+  left: 0;
+  right: auto;
   justify-content: flex-start;
 }
 
@@ -190,6 +192,7 @@ function onTouchEnd(event) {
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--panel-border);
+  border-left: 0;
   border-radius: 0 12px 12px 0;
   color: var(--text-muted);
   display: flex;

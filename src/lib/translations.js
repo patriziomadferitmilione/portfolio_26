@@ -9,8 +9,45 @@ export const messages = {
     app: {
       eyebrow: "Patrizio Milione"
     },
+    bio: {
+      eyebrow: "About the music",
+      title: "Solo songs, band noise, and years chasing the next stage.",
+      intro:
+        "This is my solo catalogue: songs written close to home, with some kept raw and self-produced, and others taken into the studio until the edges felt sharper and the choruses landed harder.",
+      expanded: [
+        "I started writing out of a strange but useful mix: years of piano, teaching myself guitar, and teenage obsessions that did not quite belong in the same room. <strong>Oasis</strong> made songwriting feel direct and possible; <strong>Michael Bublè</strong> made phrasing, timing, and vocal warmth feel just as important as volume.",
+        "Later, I wanted the songs to pick up more dirt under the nails. <strong>Arctic Monkeys</strong>, <strong>The Libertines</strong>, <strong>Queens of the Stone Age</strong>, <strong>The Strokes</strong>, and <strong>The Black Keys</strong> all left a mark on how I write: tighter riffs, looser edges, grooves that lean forward, and the feeling that a song should still breathe like people playing in a room."
+      ],
+      full: [
+        "<a href=\"https://neonstrays.com\" target=\"_blank\" rel=\"noreferrer\">Neon Strays</a> is where I give that instinct total creative freedom. I write the songs from scratch, we build and test the arrangements in band practice, and we keep the producing, recording, and distribution independent. The site is there so people can stream the songs, buy them directly to support the band, and keep up with upcoming shows.",
+        "Live, I like the songs to change shape. I can play solo with piano and voice, guitar and voice, acoustic or electric, or bring the full band version when the room needs drums, amps, and the rougher rock n roll sound.",
+        "Being on stage has always fed the writing. I have taken part in hundreds of open mics, jams, and loose sessions across London, Sydney, and Turin, building hundreds of hours of performance along the way. Those rooms are unpredictable, sometimes rough, often generous, and they taught me how a song has to stand up outside the recording."
+      ],
+      moreLabel: "I wanna know more",
+      lessLabel: "Show me less"
+    },
+    externalEmbeds: {
+      spotifyTitle: "Old Gems",
+      spotifyItems: [
+        {
+          title: "But Then Comes the Night",
+          url: "https://open.spotify.com/search/Patrizio%20Milione%20But%20Then%20Comes%20the%20Night"
+        },
+        {
+          title: "Vinegar",
+          url: "https://open.spotify.com/search/Patrizio%20Milione%20Vinegar"
+        },
+        {
+          title: "Soda & Lime",
+          url: "https://open.spotify.com/search/Patrizio%20Milione%20Soda%20%26%20Lime"
+        }
+      ],
+      soundcloudTitle: "Rough, Experimental, Outrageously Mixed Demos",
+      soundcloudEmbedUrl:
+        "https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/patrizio-milione&color=%23fcbf49&auto_play=false&hide_related=false&show_comments=false&show_user=true&show_reposts=false&show_teaser=true&visual=true"
+    },
     music: {
-      eyebrow: "Music platform",
+      eyebrow: "Music",
       heading: "Public listening and private creator controls.",
       summary:
         "Tracks and releases now come from the backend. Playback requests a signed URL. Admin login unlocks content management on the same page.",
@@ -98,8 +135,45 @@ export const messages = {
     app: {
       eyebrow: "Patrizio Milione"
     },
+    bio: {
+      eyebrow: "La musica",
+      title: "Canzoni soliste, rumore di band e anni cercando il prossimo palco.",
+      intro:
+        "Questo è il mio catalogo solista: canzoni nate vicino a casa, alcune lasciate più crude e autoprodotte, altre portate in studio finché il suono è diventato più netto e i ritornelli sono arrivati più forti.",
+      expanded: [
+        "Ho iniziato a scrivere partendo da un incrocio strano ma fertile: anni di pianoforte, la chitarra imparata da autodidatta e ascolti adolescenziali che non stavano davvero nella stessa stanza. Gli <strong>Oasis</strong> mi hanno fatto sentire la canzone come qualcosa di diretto e possibile; <strong>Michael Bublè</strong> mi ha fatto dare peso a fraseggio, tempo e calore vocale.",
+        "Più avanti ho cercato nelle canzoni un suono con più polvere addosso. <strong>Arctic Monkeys</strong>, <strong>Libertines</strong>, <strong>Queens of the Stone Age</strong>, <strong>Strokes</strong> e <strong>Black Keys</strong> hanno lasciato tracce diverse nel mio modo di scrivere: riff più stretti, bordi meno puliti, groove che spingono in avanti e l'idea che un brano debba respirare come persone che suonano insieme in una stanza."
+      ],
+      full: [
+        "<a href=\"https://neonstrays.com\" target=\"_blank\" rel=\"noreferrer\">Neon Strays</a> è il posto in cui do a quell'istinto libertà creativa totale. Scrivo i brani da zero, costruiamo e proviamo gli arrangiamenti in sala, e teniamo indipendenti produzione, registrazione e distribuzione. Il sito serve per ascoltare le canzoni, acquistarle per sostenere direttamente la band e seguire le notizie sui prossimi concerti.",
+        "Dal vivo mi piace che le canzoni possano cambiare forma. Posso suonare solo piano e voce, chitarra e voce, acustica o elettrica, oppure portare la band completa quando la stanza chiama batteria, amplificatori e un suono rock n roll più ruvido.",
+        "Stare sul palco ha sempre nutrito la scrittura. Ho preso parte a centinaia di open mic, jam e sessioni libere tra Londra, Sydney e Torino, accumulando centinaia di ore di performance negli anni. Stanze imprevedibili, a volte ruvide, spesso generose, che mi hanno insegnato come una canzone debba reggere anche fuori dalla registrazione."
+      ],
+      moreLabel: "Voglio saperne di più",
+      lessLabel: "Mostra meno"
+    },
+    externalEmbeds: {
+      spotifyTitle: "Old Gems",
+      spotifyItems: [
+        {
+          title: "But Then Comes the Night",
+          url: "https://open.spotify.com/search/Patrizio%20Milione%20But%20Then%20Comes%20the%20Night"
+        },
+        {
+          title: "Vinegar",
+          url: "https://open.spotify.com/search/Patrizio%20Milione%20Vinegar"
+        },
+        {
+          title: "Soda & Lime",
+          url: "https://open.spotify.com/search/Patrizio%20Milione%20Soda%20%26%20Lime"
+        }
+      ],
+      soundcloudTitle: "Demo grezze, sperimentali e mixate senza pietà",
+      soundcloudEmbedUrl:
+        "https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/patrizio-milione&color=%23fcbf49&auto_play=false&hide_related=false&show_comments=false&show_user=true&show_reposts=false&show_teaser=true&visual=true"
+    },
     music: {
-      eyebrow: "Piattaforma musicale",
+      eyebrow: "Musica",
       heading: "Ascolto pubblico e controlli privati per il creator.",
       summary:
         "Tracce e release arrivano dal backend. La riproduzione richiede un URL firmato. Il login admin sblocca la gestione contenuti nella stessa pagina.",

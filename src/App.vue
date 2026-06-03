@@ -5,6 +5,8 @@ import { api } from "./lib/api";
 import ExpandedPlayer from "./components/player/ExpandedPlayer.vue";
 import MiniPlayer from "./components/player/MiniPlayer.vue";
 import AppHeader from "./components/AppHeader.vue";
+import BioSection from "./components/BioSection.vue";
+import ExternalEmbedsSection from "./components/ExternalEmbedsSection.vue";
 import MusicSection from "./components/MusicSection.vue";
 import { getInitialLocale, messages } from "./lib/translations";
 import { useAuthStore } from "./stores/auth";
@@ -58,19 +60,12 @@ const loginForm = reactive({ email: "", password: "" });
 const trackForm = reactive(emptyTrack());
 const releaseForm = reactive(emptyRelease());
 
-const musicDemoTracks = [
-  createDemoTrack("vinegar", "Vinegar", "Patrizio Milione", "Vinegar", 170, ["#d9471e", "#401a14"]),
-  createDemoTrack("soda-and-lime", "Soda & Lime", "Patrizio Milione feat. Ryota Saito", "Soda & Lime", 235, ["#ff8a3d", "#6e2416"]),
-  createDemoTrack("but-then-comes-the-night", "But Then Comes the Night", "Patrizio Milione", "But Then Comes the Night", 180, ["#cb5a2b", "#23181f"])
-];
-
 const formattedDuration = computed(() => formatTime(currentTrack.value?.duration ?? 0));
 const formattedTime = computed(() => formatTime(currentTime.value));
 const text = computed(() => messages[locale.value]);
-const fallbackTracks = computed(() => (import.meta.env.DEV ? musicDemoTracks : []));
 const displayTracks = computed(() => {
   if (!tracks.value.length) {
-    return fallbackTracks.value;
+    return [];
   }
 
   return tracks.value.map((track) => {
@@ -107,6 +102,7 @@ const progress = computed(() => {
 const currentRelease = computed(() => releases.value.find((release) => release.tracks?.some((track) => track.id === currentTrackId.value)) ?? releases.value[0] ?? null);
 const currentLyrics = computed(() => currentTrack.value?.lyrics || currentRelease.value?.notes || text.value.player.noLyrics);
 const displayCurrentTrack = computed(() => displayTracks.value.find((track) => track.id === currentTrackId.value) ?? null);
+const showMiniPlayer = computed(() => Boolean(currentTrack.value || queue.value.length));
 const adminTrackOptions = computed(() => tracks.value.map((track) => ({
   id: track.id,
   label: `${track.title} · ${track.artist}`
@@ -900,31 +896,6 @@ function removeTrackFromRelease(trackId) {
   releaseForm.trackIds = releaseForm.trackIds.filter((value) => value !== trackId);
 }
 
-function createDemoTrack(id, title, artist, releaseTitle, duration, colors) {
-  return {
-    id,
-    title,
-    artist,
-    releaseTitle,
-    duration,
-    durationLabel: formatTime(duration),
-    accent: colors,
-    artworkUrl: "",
-    lyrics: createDemoLyrics(title)
-  };
-}
-
-function createDemoLyrics(title) {
-  return [
-    `${title} in the rearview, flicker in the glass`,
-    "Late train breathing through the avenue",
-    "Streetlight halo on a navy coat",
-    "Hold the note until the skyline moves",
-    "Every small delay becomes a rhythm",
-    "Every quiet room keeps the echo warm"
-  ].join("\n");
-}
-
 function resolveMediaUrl(value) {
   if (!value) {
     return "";
@@ -949,7 +920,7 @@ function formatTime(value) {
 function getInitialTheme() {
   const storedTheme = typeof window !== "undefined" ? window.localStorage.getItem("portfolio-theme") : null;
   if (storedTheme === "light" || storedTheme === "dark") return storedTheme;
-  return typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  return "light";
 }
 
 function toggleLocale() {
@@ -1395,6 +1366,8 @@ function setAdminCards(value) {
       </div>
     </section>
 
+    <BioSection :text="text" />
+
     <MusicSection
       :text="text"
       :catalog-loading="catalogLoading"
@@ -1407,7 +1380,10 @@ function setAdminCards(value) {
       @toggle-shuffle="player.toggleShuffle()"
     />
 
+    <ExternalEmbedsSection :text="text" />
+
     <MiniPlayer
+      v-if="showMiniPlayer"
       :track="displayCurrentTrack ?? currentTrack"
       :is-playing="isPlaying"
       :current-time-label="formattedTime"
