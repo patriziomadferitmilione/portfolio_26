@@ -20,6 +20,14 @@ const emit = defineEmits(["toggle-theme", "toggle-locale", "open-login"]);
 
 const menuOpen = ref(false);
 
+const nameParts = computed(() => {
+  const [firstName = "", ...rest] = String(props.text.app?.eyebrow ?? "").split(" ");
+  return {
+    firstName,
+    lastName: rest.join(" ")
+  };
+});
+
 const flagSrc = computed(() => {
   const svg = props.locale === "en"
     ? `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40"><rect width="60" height="40" fill="#012169"/><path d="M0 0L60 40M60 0L0 40" stroke="#fff" stroke-width="8"/><path d="M0 0L60 40M60 0L0 40" stroke="#C8102E" stroke-width="4"/><path d="M30 0v40M0 20h60" stroke="#fff" stroke-width="10"/><path d="M30 0v40M0 20h60" stroke="#C8102E" stroke-width="6"/></svg>`
@@ -61,7 +69,19 @@ function handleLoginOpen() {
       <i class="pi pi-bars" />
     </button>
 
-    <p class="eyebrow centered site-title" :class="{ hidden: menuOpen }">{{ text.app.eyebrow }}</p>
+    <div class="site-title" :class="{ hidden: menuOpen }" aria-label="Patrizio Milione">
+      <span class="site-title-mark" aria-hidden="true">
+        <span />
+        <span />
+      </span>
+      <div class="site-title-copy">
+        <p class="site-title-name">
+          <span>{{ nameParts.firstName }}</span>
+          <strong>{{ nameParts.lastName }}</strong>
+        </p>
+        <p class="site-title-subtitle">{{ text.music.eyebrow }}</p>
+      </div>
+    </div>
 
     <transition name="menu-pop">
       <div v-if="menuOpen" class="menu-panel">
@@ -109,13 +129,126 @@ function handleLoginOpen() {
   padding-top: 0.25rem;
 }
 
-.centered {
-  text-align: center;
-}
-
 .site-title.hidden {
   opacity: 0;
   visibility: hidden;
+}
+
+.site-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.8rem;
+  min-height: 3.4rem;
+  max-width: calc(100% - 4.4rem);
+  color: var(--page-text);
+  transition: opacity 180ms ease, visibility 180ms ease, transform 180ms ease;
+}
+
+.site-title-mark {
+  position: relative;
+  width: 2.75rem;
+  height: 2.75rem;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--accent) 34%, var(--panel-border));
+  background:
+    radial-gradient(circle at 34% 24%, color-mix(in srgb, var(--accent) 24%, transparent), transparent 48%),
+    color-mix(in srgb, var(--panel-muted) 88%, var(--accent-soft));
+  box-shadow: 0 0.75rem 1.8rem color-mix(in srgb, var(--accent-strong) 14%, transparent);
+}
+
+.site-title-mark::before {
+  content: "";
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 1.5px solid var(--accent);
+  border-radius: 50%;
+}
+
+.site-title-mark span {
+  position: absolute;
+  display: block;
+  width: 0.34rem;
+  border-radius: 999px;
+  background: var(--accent-strong);
+}
+
+.site-title-mark span:first-child {
+  height: 1.5rem;
+  transform: translateX(-0.23rem) rotate(18deg);
+}
+
+.site-title-mark span:last-child {
+  height: 1rem;
+  transform: translateX(0.34rem) translateY(0.18rem) rotate(18deg);
+  opacity: 0.72;
+}
+
+.site-title-copy {
+  display: grid;
+  gap: 0.12rem;
+  text-align: left;
+}
+
+.site-title-name,
+.site-title-subtitle {
+  margin: 0;
+}
+
+.site-title-name {
+  display: flex;
+  align-items: baseline;
+  gap: 0.34rem;
+  font-size: clamp(1.15rem, 2vw, 1.45rem);
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+.site-title-name span {
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.site-title-name strong {
+  font-weight: 800;
+  color: var(--page-text);
+}
+
+.site-title-subtitle {
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--accent-strong) 82%, var(--text-muted));
+}
+
+@media (max-width: 430px) {
+  .mode-header {
+    justify-items: start;
+    padding-right: 4.25rem;
+  }
+
+  .site-title {
+    max-width: 100%;
+    gap: 0.62rem;
+  }
+
+  .site-title-mark {
+    width: 2.45rem;
+    height: 2.45rem;
+  }
+
+  .site-title-name {
+    flex-wrap: wrap;
+    row-gap: 0.08rem;
+    font-size: 1.08rem;
+  }
+
+  .site-title-subtitle {
+    font-size: 0.68rem;
+  }
 }
 
 .menu-trigger {

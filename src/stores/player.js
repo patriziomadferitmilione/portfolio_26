@@ -19,6 +19,7 @@ function normalizeTrack(track, index = 0) {
     artworkPath: track.artworkPath ?? "",
     accent: track.accent ?? palette[index % palette.length],
     streamUrl: track.streamUrl ?? "",
+    streamExpiresAt: track.streamExpiresAt ?? 0,
     visibility: track.visibility ?? "public"
     ,lyrics: track.lyrics ?? track.notes ?? ""
   };
@@ -89,13 +90,16 @@ export const usePlayerStore = defineStore("player", () => {
     }
   }
 
-  function setTrackStream(trackId, streamUrl) {
+  function setTrackStream(trackId, streamUrl, expiresIn = null) {
     const track = tracks.value.find((item) => item.id === trackId);
     if (!track) {
       return;
     }
 
     track.streamUrl = streamUrl;
+    track.streamExpiresAt = Number.isFinite(expiresIn)
+      ? Date.now() + (expiresIn * 1000)
+      : 0;
     tracks.value = [...tracks.value];
   }
 

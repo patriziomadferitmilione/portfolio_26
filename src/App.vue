@@ -18,6 +18,7 @@ const {
   queue,
   currentTrack,
   currentTrackId,
+  currentQueueIndex,
   isPlaying,
   currentTime,
   volume,
@@ -44,6 +45,7 @@ const trackUploadBusy = ref(false);
 const releaseUploadBusy = ref(false);
 const loginError = ref("");
 const selectedReleaseTrackId = ref("");
+const prefetchedStreamTrackId = ref("");
 const adminCards = reactive({
   track: true,
   release: true,
@@ -145,7 +147,16 @@ watch(isPlaying, (value) => {
   if (value) {
     miniPlayerHidden.value = false;
   }
+  updateMediaSessionPlaybackState();
 });
+
+watch(currentTrackId, () => {
+  prefetchedStreamTrackId.value = "";
+});
+
+watch(displayCurrentTrack, updateMediaSessionMetadata);
+
+watch([currentTime, () => currentTrack.value?.duration], updateMediaSessionPosition);
 
 let scrollTimeout = null;
 
@@ -173,6 +184,9 @@ onMounted(async () => {
   if (isAdmin.value) {
     await refreshAdminData();
   }
+  setupMediaSession();
+  updateMediaSessionMetadata();
+  updateMediaSessionPlaybackState();
   window.addEventListener("scroll", handleMainScroll, { passive: true });
   window.addEventListener("wheel", handleMainScroll, { passive: true });
   window.addEventListener("touchmove", handleMainScroll, { passive: true });
@@ -188,6 +202,7 @@ onBeforeUnmount(() => {
   if (scrollTimeout) {
     clearTimeout(scrollTimeout);
   }
+  clearMediaSession();
 });
 
 async function refreshCatalog() {
@@ -297,10 +312,10 @@ async function ensureTrackIsPlayable(trackId) {
     return null;
   }
 
-  if (!track.streamUrl || !track.streamUrl.startsWith("blob:")) {
+  if (!hasFreshStreamUrl(track)) {
     try {
       const response = await api.authorizePlayback(track.id);
-      player.setTrackStream(track.id, response.streamUrl);
+      player.setTrackStream(track.id, response.streamUrl, response.expiresIn);
       await nextTick();
     } catch (error) {
       statusMessage.value = error.message;
@@ -312,13 +327,87 @@ async function ensureTrackIsPlayable(trackId) {
 }
 
 function handleTimeUpdate() {
-  if (audioRef.value) player.setCurrentTime(audioRef.value.currentTime);
+  if (!audioRef.value) {
+    return;
+  }
+
+  player.setCurrentTime(audioRef.value.currentTime);
+  prefetchUpcomingTrackStream();
 }
 
 function handleLoadedMetadata() {
   if (audioRef.value && currentTrack.value) {
     currentTrack.value.duration = Math.round(audioRef.value.duration || currentTrack.value.duration);
+    updateMediaSessionPosition();
   }
+}
+
+function handleAudioPlay() {
+  player.setPlaying(true);
+}
+
+function handleAudioPause() {
+  player.setPlaying(false);
+}
+
+async function prefetchUpcomingTrackStream() {
+  if (!audioRef.value || !isPlaying.value) {
+    return;
+  }
+
+  const duration = currentTrack.value?.duration ?? audioRef.value.duration ?? 0;
+  const remaining = duration - audioRef.value.currentTime;
+  if (!Number.isFinite(remaining) || remaining > 20) {
+    return;
+  }
+
+  const nextTrackId = getUpcomingTrackId();
+  if (!nextTrackId || prefetchedStreamTrackId.value === nextTrackId) {
+    return;
+  }
+
+  const nextTrack = tracks.value.find((track) => track.id === nextTrackId);
+  if (!nextTrack || hasFreshStreamUrl(nextTrack)) {
+    prefetchedStreamTrackId.value = nextTrackId;
+    return;
+  }
+
+  prefetchedStreamTrackId.value = nextTrackId;
+  try {
+    const response = await api.authorizePlayback(nextTrackId);
+    player.setTrackStream(nextTrackId, response.streamUrl, response.expiresIn);
+  } catch {
+    prefetchedStreamTrackId.value = "";
+  }
+}
+
+function hasFreshStreamUrl(track) {
+  if (!track?.streamUrl) {
+    return false;
+  }
+
+  if (track.streamUrl.startsWith("blob:")) {
+    return true;
+  }
+
+  return Number(track.streamExpiresAt ?? 0) > Date.now() + 30000;
+}
+
+function getUpcomingTrackId() {
+  if (!queue.value.length || !currentTrackId.value) {
+    return "";
+  }
+
+  if (repeatMode.value === "one") {
+    return currentTrackId.value;
+  }
+
+  const nextIndex = currentQueueIndex.value + 1;
+  if (nextIndex < queue.value.length) {
+    return queue.value[nextIndex].id;
+  }
+
+  return repeatMode.value === "all" ? queue.value[0]?.id ?? "" : "";
 }
 
 function seekTrack(event) {
@@ -446,6 +535,141 @@ async function handleTrackEnded() {
     player.setPlaying(false);
     player.setCurrentTime(0);
   }
+}
+
+function setupMediaSession() {
+  if (!supportsMediaSession()) {
+    return;
+  }
+
+  setMediaSessionAction("play", async () => {
+    if (audioRef.value?.paused) {
+      await togglePlayback();
+    }
+  });
+  setMediaSessionAction("pause", () => {
+    if (!audioRef.value?.paused) {
+      audioRef.value.pause();
+      player.setPlaying(false);
+    }
+  });
+  setMediaSessionAction("nexttrack", handleNext);
+  setMediaSessionAction("previoustrack", handlePrevious);
+  setMediaSessionAction("seekbackward", ({ seekOffset = 10 } = {}) => {
+    seekBySeconds(-seekOffset);
+  });
+  setMediaSessionAction("seekforward", ({ seekOffset = 10 } = {}) => {
+    seekBySeconds(seekOffset);
+  });
+  setMediaSessionAction("seekto", ({ seekTime, fastSeek } = {}) => {
+    if (!audioRef.value || !Number.isFinite(seekTime)) {
+      return;
+    }
+
+    if (fastSeek && "fastSeek" in audioRef.value) {
+      audioRef.value.fastSeek(seekTime);
+    } else {
+      audioRef.value.currentTime = seekTime;
+    }
+    player.setCurrentTime(audioRef.value.currentTime);
+    updateMediaSessionPosition();
+  });
+}
+
+function clearMediaSession() {
+  if (!supportsMediaSession()) {
+    return;
+  }
+
+  ["play", "pause", "nexttrack", "previoustrack", "seekbackward", "seekforward", "seekto"].forEach((action) => {
+    setMediaSessionAction(action, null);
+  });
+}
+
+function setMediaSessionAction(action, handler) {
+  try {
+    navigator.mediaSession.setActionHandler(action, handler);
+  } catch {
+    // Some browsers expose Media Session but only implement a subset of actions.
+  }
+}
+
+function updateMediaSessionMetadata() {
+  if (!supportsMediaSession() || typeof MediaMetadata === "undefined") {
+    return;
+  }
+
+  const track = displayCurrentTrack.value;
+  if (!track) {
+    navigator.mediaSession.metadata = null;
+    return;
+  }
+
+  const artworkUrl = resolveMediaUrl(track.artworkUrl || track.artworkPath || currentRelease.value?.artworkUrl || "");
+  const artwork = artworkUrl
+    ? [
+        { src: artworkUrl, sizes: "96x96", type: "image/png" },
+        { src: artworkUrl, sizes: "192x192", type: "image/png" },
+        { src: artworkUrl, sizes: "512x512", type: "image/png" }
+      ]
+    : [
+        { src: "/icon-192-dark.png", sizes: "192x192", type: "image/png" },
+        { src: "/icon-512-dark.png", sizes: "512x512", type: "image/png" }
+      ];
+
+  navigator.mediaSession.metadata = new MediaMetadata({
+    title: track.title,
+    artist: track.artist,
+    album: track.releaseTitle ?? track.releaseLabel ?? currentRelease.value?.title ?? "",
+    artwork
+  });
+  updateMediaSessionPosition();
+}
+
+function updateMediaSessionPlaybackState() {
+  if (!supportsMediaSession()) {
+    return;
+  }
+
+  navigator.mediaSession.playbackState = isPlaying.value ? "playing" : "paused";
+}
+
+function updateMediaSessionPosition() {
+  if (!supportsMediaSession() || typeof navigator.mediaSession.setPositionState !== "function") {
+    return;
+  }
+
+  const duration = Number(currentTrack.value?.duration ?? audioRef.value?.duration ?? 0);
+  const position = Number(currentTime.value ?? audioRef.value?.currentTime ?? 0);
+  if (!Number.isFinite(duration) || duration <= 0 || !Number.isFinite(position)) {
+    return;
+  }
+
+  try {
+    navigator.mediaSession.setPositionState({
+      duration,
+      playbackRate: audioRef.value?.playbackRate ?? 1,
+      position: Math.min(position, duration)
+    });
+  } catch {
+    // Ignore invalid transient states while media metadata is loading.
+  }
+}
+
+function seekBySeconds(offset) {
+  if (!audioRef.value) {
+    return;
+  }
+
+  const duration = currentTrack.value?.duration ?? audioRef.value.duration ?? 0;
+  const target = Math.max(0, Math.min(duration || Number.MAX_SAFE_INTEGER, audioRef.value.currentTime + offset));
+  audioRef.value.currentTime = target;
+  player.setCurrentTime(target);
+  updateMediaSessionPosition();
+}
+
+function supportsMediaSession() {
+  return typeof navigator !== "undefined" && "mediaSession" in navigator;
 }
 
 function onFilesSelected(event) {
@@ -752,7 +976,15 @@ function setAdminCards(value) {
 
 <template>
   <div class="app-shell">
-    <audio ref="audioRef" preload="metadata" @timeupdate="handleTimeUpdate" @loadedmetadata="handleLoadedMetadata" @ended="handleTrackEnded" />
+    <audio
+      ref="audioRef"
+      preload="auto"
+      @timeupdate="handleTimeUpdate"
+      @loadedmetadata="handleLoadedMetadata"
+      @play="handleAudioPlay"
+      @pause="handleAudioPause"
+      @ended="handleTrackEnded"
+    />
 
     <AppHeader
       :theme="theme"
