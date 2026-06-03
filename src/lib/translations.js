@@ -27,18 +27,27 @@ export const messages = {
       lessLabel: "Show me less"
     },
     externalEmbeds: {
-      spotifyTitle: "Old Gems",
+      spotifyTitle: "Earlier Singles",
       spotifyItems: [
         {
           title: "But Then Comes the Night",
+          note: "2020 single",
+          artworkUrl:
+            "https://is1-ssl.mzstatic.com/image/thumb/Music114/v4/c1/a3/88/c1a38890-71b6-5247-e8ef-455478e27a76/5059580481186_cover.jpg/512x512bb.jpg",
           url: "https://open.spotify.com/search/Patrizio%20Milione%20But%20Then%20Comes%20the%20Night"
         },
         {
           title: "Vinegar",
+          note: "2020 single",
+          artworkUrl:
+            "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/c9/dd/11/c9dd111a-8aaf-a3d2-5762-aa6d3383472c/5059580559595_cover.jpg/512x512bb.jpg",
           url: "https://open.spotify.com/search/Patrizio%20Milione%20Vinegar"
         },
         {
           title: "Soda & Lime",
+          note: "2020 single",
+          artworkUrl:
+            "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/e6/48/d9/e648d9ca-5b2c-6f27-9e64-db5a03f5ab32/5059580684808_cover.jpg/512x512bb.jpg",
           url: "https://open.spotify.com/search/Patrizio%20Milione%20Soda%20%26%20Lime"
         }
       ],
@@ -153,18 +162,27 @@ export const messages = {
       lessLabel: "Mostra meno"
     },
     externalEmbeds: {
-      spotifyTitle: "Old Gems",
+      spotifyTitle: "Prime uscite",
       spotifyItems: [
         {
           title: "But Then Comes the Night",
+          note: "Singolo 2020",
+          artworkUrl:
+            "https://is1-ssl.mzstatic.com/image/thumb/Music114/v4/c1/a3/88/c1a38890-71b6-5247-e8ef-455478e27a76/5059580481186_cover.jpg/512x512bb.jpg",
           url: "https://open.spotify.com/search/Patrizio%20Milione%20But%20Then%20Comes%20the%20Night"
         },
         {
           title: "Vinegar",
+          note: "Singolo 2020",
+          artworkUrl:
+            "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/c9/dd/11/c9dd111a-8aaf-a3d2-5762-aa6d3383472c/5059580559595_cover.jpg/512x512bb.jpg",
           url: "https://open.spotify.com/search/Patrizio%20Milione%20Vinegar"
         },
         {
           title: "Soda & Lime",
+          note: "Singolo 2020",
+          artworkUrl:
+            "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/e6/48/d9/e648d9ca-5b2c-6f27-9e64-db5a03f5ab32/5059580684808_cover.jpg/512x512bb.jpg",
           url: "https://open.spotify.com/search/Patrizio%20Milione%20Soda%20%26%20Lime"
         }
       ],

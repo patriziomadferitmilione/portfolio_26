@@ -308,8 +308,9 @@ function onTouchEnd(event) {
   width: 44px;
   height: 44px;
   border-radius: 10px;
-  object-fit: cover;
+  object-fit: contain;
   display: block;
+  background: var(--panel-muted);
   box-shadow: 0 4px 12px color-mix(in srgb, var(--accent-strong) 18%, transparent);
 }
 

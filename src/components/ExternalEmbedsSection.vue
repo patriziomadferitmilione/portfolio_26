@@ -24,8 +24,12 @@ defineProps({
           target="_blank"
           rel="noreferrer"
         >
-          <span>{{ item.title }}</span>
-          <i class="pi pi-external-link" aria-hidden="true" />
+          <img :src="item.artworkUrl" :alt="`${item.title} artwork`" class="spotify-artwork" loading="lazy" />
+          <span class="spotify-link-copy">
+            <span>{{ item.title }}</span>
+            <small>{{ item.note }}</small>
+          </span>
+          <i class="pi pi-external-link spotify-link-icon" aria-hidden="true" />
         </a>
       </div>
     </article>
@@ -108,12 +112,12 @@ defineProps({
 }
 
 .spotify-link {
-  display: flex;
+  display: grid;
+  grid-template-columns: 4.3rem minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
   gap: 0.8rem;
-  min-height: 3.8rem;
-  padding: 0.8rem 0.95rem;
+  min-height: 5.1rem;
+  padding: 0.55rem 0.8rem 0.55rem 0.55rem;
   border-radius: 18px;
   border: 1px solid var(--panel-border);
   background: color-mix(in srgb, var(--panel-muted) 82%, transparent);
@@ -128,7 +132,35 @@ defineProps({
   background: var(--accent-soft);
 }
 
-.spotify-link i {
+.spotify-artwork {
+  display: block;
+  width: 4.3rem;
+  height: 4.3rem;
+  border-radius: 14px;
+  object-fit: cover;
+  box-shadow: 0 12px 28px color-mix(in srgb, var(--accent-strong) 16%, transparent);
+}
+
+.spotify-link-copy {
+  display: grid;
+  gap: 0.18rem;
+  min-width: 0;
+}
+
+.spotify-link-copy span,
+.spotify-link-copy small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.spotify-link-copy small {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.spotify-link-icon {
   flex-shrink: 0;
   color: var(--accent);
 }

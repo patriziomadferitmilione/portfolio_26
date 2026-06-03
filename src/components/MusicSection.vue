@@ -219,7 +219,8 @@ defineEmits(["select-track", "toggle-track", "toggle-shuffle"]);
 }
 
 .song-cover-image {
-  object-fit: cover;
+  object-fit: contain;
+  background: var(--panel-muted);
 }
 
 .song-cover-fallback {
