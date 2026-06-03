@@ -529,7 +529,6 @@ async function submitTrack() {
       title: trackForm.title,
       artist: trackForm.artist,
       mood: trackForm.mood,
-      duration: Number(trackForm.duration),
       visibility: trackForm.visibility,
       audioPath: trackForm.audioPath,
       artworkPath: trackForm.artworkPath,
@@ -578,7 +577,6 @@ function editTrack(track) {
     title: track.title,
     artist: track.artist,
     mood: track.mood,
-    duration: String(track.duration),
     visibility: track.visibility,
     audioPath: track.audioPath ?? track.storageKey ?? "",
     artworkPath: track.artworkPath ?? "",
@@ -650,7 +648,6 @@ function emptyTrack() {
     title: "",
     artist: "Patrizio Milione",
     mood: "Pop",
-    duration: "180",
     visibility: "public",
     audioPath: "",
     artworkPath: "",
@@ -959,10 +956,6 @@ function setAdminCards(value) {
               <label class="field">
                 <span>{{ text.admin.mood }}</span>
                 <input v-model="trackForm.mood" type="text" />
-              </label>
-              <label class="field">
-                <span>{{ text.admin.duration }}</span>
-                <input v-model="trackForm.duration" type="number" min="0" step="1" />
               </label>
               <label class="field">
                 <span>{{ text.admin.visibility }}</span>

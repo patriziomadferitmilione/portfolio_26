@@ -137,10 +137,6 @@ const formatOptions = [
             </div>
             <div class="form-row">
               <div class="form-field">
-                <label>Duration (sec)</label>
-                <InputText v-model="trackForm.duration" type="number" required />
-              </div>
-              <div class="form-field">
                 <label>Visibility</label>
                 <Select v-model="trackForm.visibility" :options="visibilityOptions" optionLabel="label" optionValue="value" />
               </div>
