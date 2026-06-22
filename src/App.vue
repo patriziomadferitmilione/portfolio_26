@@ -8,6 +8,7 @@ import AppHeader from "./components/AppHeader.vue";
 import BioSection from "./components/BioSection.vue";
 import ExternalEmbedsSection from "./components/ExternalEmbedsSection.vue";
 import MusicSection from "./components/MusicSection.vue";
+import EpkSections from "./components/EpkSections.vue";
 import { getInitialLocale, messages } from "./lib/translations";
 import { useAuthStore } from "./stores/auth";
 import { usePlayerStore } from "./stores/player";
@@ -966,6 +967,8 @@ function setAdminCards(value) {
       @open-login="openLoginPanel"
     />
 
+    <EpkSections @listen="document.getElementById('discography')?.scrollIntoView({ behavior: 'smooth' })" />
+
     <section v-if="loginPanelOpen" class="login-panel">
       <div class="login-panel-head">
         <p class="eyebrow">{{ isAuthenticated ? text.auth.adminSession : text.auth.adminLogin }}</p>
@@ -1368,6 +1371,7 @@ function setAdminCards(value) {
 
     <BioSection :text="text" />
 
+    <div id="discography" class="epk-discography-anchor">
     <MusicSection
       :text="text"
       :catalog-loading="catalogLoading"
@@ -1379,6 +1383,7 @@ function setAdminCards(value) {
       @toggle-track="toggleTrackFromList"
       @toggle-shuffle="player.toggleShuffle()"
     />
+    </div>
 
     <ExternalEmbedsSection :text="text" />
 
