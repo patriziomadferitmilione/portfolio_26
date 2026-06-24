@@ -33,6 +33,8 @@ const theme = ref(getInitialTheme());
 const locale = ref(getInitialLocale());
 const loginPanelOpen = ref(false);
 const epkMenuOpen = ref(false);
+// Temporary feature flag: keep player code/components ready without exposing playback UI.
+const playerEnabled = false;
 const playerExpanded = ref(false);
 const miniPlayerHidden = ref(false);
 const releases = ref([]);
@@ -1390,7 +1392,7 @@ function setAdminCards(value) {
     <ExternalEmbedsSection :text="text" />
 
     <MiniPlayer
-      v-if="showMiniPlayer"
+      v-if="playerEnabled && showMiniPlayer"
       :track="displayCurrentTrack ?? currentTrack"
       :is-playing="isPlaying"
       :current-time-label="formattedTime"
@@ -1408,6 +1410,7 @@ function setAdminCards(value) {
     />
 
     <ExpandedPlayer
+      v-if="playerEnabled"
       :open="playerExpanded"
       :track="displayCurrentTrack ?? currentTrack"
       :release-title="currentRelease?.title ?? ''"
