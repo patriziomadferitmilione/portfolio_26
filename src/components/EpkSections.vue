@@ -154,9 +154,7 @@ const formations = computed(() => t.value.formations.map(([name, format, detail,
         <h1 id="hero-title">Patrizio<br><em>Milione</em></h1>
         <p class="hero-role">{{ t.role }}</p>
         <p class="hero-location">Italy · United Kingdom · Australia</p>
-        <div class="hero-actions">
-          <button class="button button-light" @click="emit('listen')">{{ t.listen }}</button>
-          <a class="button button-ghost" href="#booking">{{ t.nav[5] }}</a></div>
+        <div class="hero-actions"><a class="button button-ghost" href="#booking">{{ t.nav[5] }}</a></div>
       </div>
       <a class="scroll-cue" href="#artist">{{ t.scroll }} <span>↓</span></a></section>
     <section id="artist" class="profile section-wrap">
