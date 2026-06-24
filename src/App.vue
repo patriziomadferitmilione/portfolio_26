@@ -5,7 +5,6 @@ import { api } from "./lib/api";
 import ExpandedPlayer from "./components/player/ExpandedPlayer.vue";
 import MiniPlayer from "./components/player/MiniPlayer.vue";
 import AppHeader from "./components/AppHeader.vue";
-import BioSection from "./components/BioSection.vue";
 import ExternalEmbedsSection from "./components/ExternalEmbedsSection.vue";
 import MusicSection from "./components/MusicSection.vue";
 import EpkSections from "./components/EpkSections.vue";
@@ -33,6 +32,7 @@ const {
 const theme = ref(getInitialTheme());
 const locale = ref(getInitialLocale());
 const loginPanelOpen = ref(false);
+const epkMenuOpen = ref(false);
 const playerExpanded = ref(false);
 const miniPlayerHidden = ref(false);
 const releases = ref([]);
@@ -962,43 +962,47 @@ function setAdminCards(value) {
       :theme="theme"
       :locale="locale"
       :text="text"
+      :epk-menu-open="epkMenuOpen"
       @toggle-theme="theme = theme === 'dark' ? 'light' : 'dark'"
       @toggle-locale="toggleLocale"
       @open-login="openLoginPanel"
+      @toggle-epk-menu="epkMenuOpen = !epkMenuOpen"
     />
 
-    <EpkSections @listen="document.getElementById('discography')?.scrollIntoView({ behavior: 'smooth' })" />
+    <EpkSections :locale="locale" :theme="theme" :text="text" :menu-open="epkMenuOpen" @close-menu="epkMenuOpen = false" @toggle-theme="theme = theme === 'dark' ? 'light' : 'dark'" @toggle-locale="toggleLocale" @open-login="epkMenuOpen = false; openLoginPanel()" @listen="document.getElementById('discography')?.scrollIntoView({ behavior: 'smooth' })" />
 
-    <section v-if="loginPanelOpen" class="login-panel">
-      <div class="login-panel-head">
-        <p class="eyebrow">{{ isAuthenticated ? text.auth.adminSession : text.auth.adminLogin }}</p>
-        <button class="panel-close" type="button" aria-label="Close login panel" @click="loginPanelOpen = false">
-          <i class="pi pi-times" />
-        </button>
-      </div>
+    <div v-if="loginPanelOpen" class="login-modal-backdrop" @click.self="loginPanelOpen = false">
+      <section class="login-panel" role="dialog" aria-modal="true" :aria-label="isAuthenticated ? text.auth.adminSession : text.auth.adminLogin">
+        <div class="login-panel-head">
+          <p class="eyebrow">{{ isAuthenticated ? text.auth.adminSession : text.auth.adminLogin }}</p>
+          <button class="panel-close" type="button" aria-label="Close login panel" @click="loginPanelOpen = false">
+            <i class="pi pi-times" />
+          </button>
+        </div>
 
-      <form v-if="!isAuthenticated" class="login-form" @submit.prevent="submitLogin">
-        <label class="field">
-          <span>Email</span>
-          <input v-model="loginForm.email" type="email" autocomplete="username" />
-        </label>
-        <label class="field">
-          <span>Password</span>
-          <input v-model="loginForm.password" type="password" autocomplete="current-password" />
-        </label>
-        <p v-if="loginError" class="login-error">{{ loginError }}</p>
-        <button class="login-action" type="submit" :disabled="authLoading">
-          {{ authLoading ? text.auth.signingIn : text.auth.login }}
-        </button>
-      </form>
+        <form v-if="!isAuthenticated" class="login-form" @submit.prevent="submitLogin">
+          <label class="field">
+            <span>Email</span>
+            <input v-model="loginForm.email" type="email" autocomplete="username" />
+          </label>
+          <label class="field">
+            <span>Password</span>
+            <input v-model="loginForm.password" type="password" autocomplete="current-password" />
+          </label>
+          <p v-if="loginError" class="login-error">{{ loginError }}</p>
+          <button class="login-action" type="submit" :disabled="authLoading">
+            {{ authLoading ? text.auth.signingIn : text.auth.login }}
+          </button>
+        </form>
 
-      <div v-else class="login-state">
-        <p class="login-note">{{ text.auth.adminSession }}</p>
-        <button class="login-action" type="button" @click="logout">
-          {{ text.auth.logout }}
-        </button>
-      </div>
-    </section>
+        <div v-else class="login-state">
+          <p class="login-note">{{ text.auth.adminSession }}</p>
+          <button class="login-action" type="button" @click="logout">
+            {{ text.auth.logout }}
+          </button>
+        </div>
+      </section>
+    </div>
 
     <section v-if="isAdmin" class="admin-dashboard">
       <div class="admin-dashboard-shell">
@@ -1368,8 +1372,6 @@ function setAdminCards(value) {
         </section>
       </div>
     </section>
-
-    <BioSection :text="text" />
 
     <div id="discography" class="epk-discography-anchor">
     <MusicSection

@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from "vue";
+import { computed } from "vue";
 
 const props = defineProps({
   theme: {
@@ -13,12 +13,14 @@ const props = defineProps({
   text: {
     type: Object,
     default: () => ({})
+  },
+  epkMenuOpen: {
+    type: Boolean,
+    default: false
   }
 });
 
-const emit = defineEmits(["toggle-theme", "toggle-locale", "open-login"]);
-
-const menuOpen = ref(false);
+const emit = defineEmits(["toggle-theme", "toggle-locale", "open-login", "toggle-epk-menu"]);
 
 const nameParts = computed(() => {
   const [firstName = "", ...rest] = String(props.text.app?.eyebrow ?? "").split(" ");
@@ -36,40 +38,22 @@ const flagSrc = computed(() => {
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 });
 
-function closeMenu() {
-  menuOpen.value = false;
-}
-
-function handleThemeToggle() {
-  emit("toggle-theme");
-  closeMenu();
-}
-
-function handleLocaleToggle() {
-  emit("toggle-locale");
-  closeMenu();
-}
-
-function handleLoginOpen() {
-  emit("open-login");
-  closeMenu();
-}
 </script>
 
 <template>
   <header class="mode-header">
     <button
       class="menu-trigger"
-      :class="{ open: menuOpen }"
       type="button"
-      :aria-label="menuOpen ? 'Close menu' : 'Open menu'"
-      :aria-expanded="menuOpen"
-      @click="menuOpen = !menuOpen"
+      :class="{ open: epkMenuOpen }"
+      :aria-label="epkMenuOpen ? 'Close menu' : 'Open menu'"
+      :aria-expanded="epkMenuOpen"
+      @click="emit('toggle-epk-menu')"
     >
       <i class="pi pi-bars" />
     </button>
 
-    <div class="site-title" :class="{ hidden: menuOpen }" :aria-label="text.app.eyebrow">
+    <div class="site-title" :aria-label="text.app.eyebrow">
       <div class="site-title-copy">
         <p class="site-title-name">
           <strong>{{ nameParts.firstName }}</strong>
@@ -79,39 +63,18 @@ function handleLoginOpen() {
       </div>
     </div>
 
-    <transition name="menu-pop">
-      <div v-if="menuOpen" class="menu-panel">
-        <button
-          class="menu-item"
-          type="button"
-          :aria-label="theme === 'dark' ? text.theme.light : text.theme.dark"
-          :title="theme === 'dark' ? text.theme.light : text.theme.dark"
-          @click="handleThemeToggle"
-        >
-          <i :class="theme === 'dark' ? 'pi pi-moon' : 'pi pi-sun'" />
-        </button>
+    <div class="desktop-controls" aria-label="Site controls">
+      <button type="button" :aria-label="theme === 'dark' ? text.theme.light : text.theme.dark" :title="theme === 'dark' ? text.theme.light : text.theme.dark" @click="emit('toggle-theme')">
+        <i :class="theme === 'dark' ? 'pi pi-moon' : 'pi pi-sun'" />
+      </button>
+      <button type="button" :aria-label="text.languageName" :title="text.languageName" @click="emit('toggle-locale')">
+        <img class="flag-icon" :src="flagSrc" alt="" aria-hidden="true" />
+      </button>
+      <button type="button" :aria-label="text.auth.login" :title="text.auth.login" @click="emit('open-login')">
+        <i class="pi pi-user" />
+      </button>
+    </div>
 
-        <button
-          class="menu-item"
-          type="button"
-          :aria-label="text.languageName"
-          :title="text.languageName"
-          @click="handleLocaleToggle"
-        >
-          <img class="flag-icon" :src="flagSrc" alt="" aria-hidden="true" />
-        </button>
-
-        <button
-          class="menu-item"
-          type="button"
-          :aria-label="text.auth.login"
-          :title="text.auth.login"
-          @click="handleLoginOpen"
-        >
-          <i class="pi pi-user" />
-        </button>
-      </div>
-    </transition>
   </header>
 </template>
 
@@ -233,6 +196,28 @@ function handleLoginOpen() {
   }
 }
 
+@media (min-width: 431px) and (max-width: 759px) {
+  .mode-header {
+    justify-items: start;
+    margin-bottom: 0;
+    padding: 0.55rem 4.75rem 0.55rem 1rem;
+    min-height: 52px;
+  }
+
+  .site-title {
+    min-height: 2.4rem;
+    max-width: 100%;
+  }
+
+  .site-title-name {
+    font-size: 1.7rem;
+  }
+
+  .site-title-subtitle {
+    display: none;
+  }
+}
+
 .menu-trigger {
   position: absolute;
   top: 0;
@@ -300,5 +285,107 @@ function handleLoginOpen() {
 .menu-pop-leave-to {
   opacity: 0;
   transform: translateX(0.4rem) scale(0.92);
+}
+
+/* EPK app-bar treatment */
+.mode-header {
+  margin-bottom: 0;
+  padding: 1.25rem 5rem;
+  border-bottom: 1px solid var(--line-soft);
+  background: var(--ivory);
+}
+
+.site-title {
+  min-height: 0;
+  max-width: 100%;
+  color: var(--ink);
+}
+
+.site-title-copy {
+  text-align: center;
+}
+
+.site-title-name {
+  font-family: Oswald, Impact, sans-serif;
+  font-size: clamp(2.3rem, 5vw, 4.8rem);
+  font-weight: 600;
+  line-height: 0.88;
+  letter-spacing: -0.025em;
+  text-transform: uppercase;
+}
+
+.site-title-name strong,
+.site-title-name span {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.site-title-subtitle {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: var(--burgundy);
+}
+
+.desktop-controls {
+  position: absolute;
+  top: 50%;
+  right: 1rem;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.desktop-controls button {
+  width: 3rem;
+  height: 3rem;
+  border: 1px solid var(--line-soft);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.desktop-controls button:hover {
+  border-color: var(--burgundy);
+  color: var(--burgundy);
+}
+
+@media (min-width: 760px) {
+  .menu-trigger {
+    display: none;
+  }
+}
+
+@media (max-width: 759px) {
+  .mode-header {
+    justify-items: start;
+    min-height: 52px;
+    padding: 0.55rem 4.75rem 0.55rem 1rem;
+  }
+
+  .site-title {
+    min-height: 2.4rem;
+  }
+
+  .site-title-name {
+    font-size: 1.7rem;
+  }
+
+  .site-title-subtitle,
+  .desktop-controls {
+    display: none;
+  }
+
+  .menu-trigger {
+    top: 0.55rem;
+    right: 1rem;
+    width: 2.4rem;
+    height: 2.4rem;
+  }
 }
 </style>

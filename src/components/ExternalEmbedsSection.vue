@@ -181,4 +181,115 @@ defineProps({
     align-items: start;
   }
 }
+
+/* EPK editorial treatment */
+.external-listening {
+  width: min(100% - 2.25rem, 1240px);
+  margin: 0 auto;
+  padding: clamp(4.25rem, 8vw, 7rem) 0;
+  gap: 1px;
+  background: var(--line-soft);
+}
+
+.external-card {
+  gap: 1.5rem;
+  padding: clamp(1.4rem, 3vw, 2.25rem);
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.spotify-card {
+  background: var(--ink);
+  color: var(--ivory);
+}
+
+.soundcloud-card {
+  background: #ded2c0;
+}
+
+.external-card-head {
+  align-items: flex-end;
+  padding-bottom: 1.15rem;
+  border-bottom: 1px solid currentColor;
+}
+
+.external-card-head h2 {
+  margin: 0.3rem 0 0;
+  font-family: Oswald, Impact, sans-serif;
+  font-size: clamp(2.4rem, 5vw, 4rem);
+  font-weight: 600;
+  line-height: 0.9;
+  letter-spacing: -0.025em;
+  text-transform: uppercase;
+}
+
+.spotify-card .external-card-head h2,
+.spotify-card .external-card-head > i {
+  color: var(--ivory);
+}
+
+.soundcloud-card .external-card-head h2 {
+  color: var(--ink);
+}
+
+.external-eyebrow {
+  color: var(--burgundy);
+}
+
+.external-card-head > i {
+  font-size: 1.45rem;
+  color: var(--burgundy);
+}
+
+.spotify-link-grid {
+  gap: 0;
+}
+
+.spotify-link {
+  grid-template-columns: 3.8rem minmax(0, 1fr) auto;
+  gap: 0.8rem;
+  min-height: 4.8rem;
+  padding: 0.55rem 0;
+  border: 0;
+  border-bottom: 1px solid rgba(245, 241, 232, 0.25);
+  border-radius: 0;
+  background: transparent;
+  color: var(--ivory);
+}
+
+.spotify-link:last-child {
+  border-bottom: 0;
+}
+
+.spotify-link:hover {
+  transform: none;
+  border-color: var(--gold);
+  background: transparent;
+}
+
+.spotify-artwork {
+  width: 3.8rem;
+  height: 3.8rem;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.spotify-link-copy {
+  gap: 0.25rem;
+}
+
+.spotify-link-copy small {
+  color: rgba(245, 241, 232, 0.65);
+}
+
+.spotify-link-icon {
+  color: var(--gold);
+}
+
+.soundcloud-frame {
+  min-height: 380px;
+  border-radius: 0;
+  background: var(--ivory);
+}
 </style>
