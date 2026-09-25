@@ -1,8 +1,8 @@
 <script setup>
 import {computed, ref} from 'vue';
 
-const props = defineProps({locale: {type: String, default: 'en'}, theme: {type: String, default: 'light'}, text: {type: Object, default: () => ({})}, menuOpen: {type: Boolean, default: false}});
-const emit = defineEmits(['listen', 'close-menu', 'toggle-theme', 'toggle-locale', 'open-login']);
+const props = defineProps({locale: {type: String, default: 'en'}, text: {type: Object, default: () => ({})}, menuOpen: {type: Boolean, default: false}});
+const emit = defineEmits(['listen', 'close-menu', 'toggle-locale', 'open-login']);
 const activeFormation = ref(null);
 const lightbox = ref(null);
 

@@ -29,7 +29,7 @@ const {
   canPlayCurrent
 } = storeToRefs(player);
 
-const theme = ref(getInitialTheme());
+document.documentElement.dataset.theme = "light";
 const locale = ref(getInitialLocale());
 const loginPanelOpen = ref(false);
 const epkMenuOpen = ref(false);
@@ -133,10 +133,6 @@ watch(volume, (value) => {
   if (audioRef.value) audioRef.value.volume = value / 100;
 }, { immediate: true });
 
-watch(theme, (value) => {
-  document.documentElement.dataset.theme = value;
-  window.localStorage.setItem("portfolio-theme", value);
-}, { immediate: true });
 
 watch(locale, (value) => {
   window.localStorage.setItem("portfolio-locale", value);
@@ -920,11 +916,6 @@ function formatTime(value) {
   return `${minutes}:${String(seconds).padStart(2, "0")}`;
 }
 
-function getInitialTheme() {
-  const storedTheme = typeof window !== "undefined" ? window.localStorage.getItem("portfolio-theme") : null;
-  if (storedTheme === "light" || storedTheme === "dark") return storedTheme;
-  return "light";
-}
 
 function toggleLocale() {
   locale.value = locale.value === "en" ? "it" : "en";
@@ -961,17 +952,15 @@ function setAdminCards(value) {
     />
 
     <AppHeader
-      :theme="theme"
       :locale="locale"
       :text="text"
       :epk-menu-open="epkMenuOpen"
-      @toggle-theme="theme = theme === 'dark' ? 'light' : 'dark'"
       @toggle-locale="toggleLocale"
       @open-login="openLoginPanel"
       @toggle-epk-menu="epkMenuOpen = !epkMenuOpen"
     />
 
-    <EpkSections :locale="locale" :theme="theme" :text="text" :menu-open="epkMenuOpen" @close-menu="epkMenuOpen = false" @toggle-theme="theme = theme === 'dark' ? 'light' : 'dark'" @toggle-locale="toggleLocale" @open-login="epkMenuOpen = false; openLoginPanel()" @listen="document.getElementById('discography')?.scrollIntoView({ behavior: 'smooth' })" />
+    <EpkSections :locale="locale" :text="text" :menu-open="epkMenuOpen" @close-menu="epkMenuOpen = false" @toggle-locale="toggleLocale" @open-login="epkMenuOpen = false; openLoginPanel()" @listen="document.getElementById('discography')?.scrollIntoView({ behavior: 'smooth' })" />
 
     <div v-if="loginPanelOpen" class="login-modal-backdrop" @click.self="loginPanelOpen = false">
       <section class="login-panel" role="dialog" aria-modal="true" :aria-label="isAuthenticated ? text.auth.adminSession : text.auth.adminLogin">

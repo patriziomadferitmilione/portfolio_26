@@ -2,6 +2,10 @@
 defineProps({
   text: { type: Object, default: () => ({}) }
 });
+
+function soundcloudAlbumEmbed(url) {
+  return `https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}&color=%23fcbf49&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&visual=true`;
+}
 </script>
 
 <template>
@@ -31,6 +35,14 @@ defineProps({
           </span>
           <i class="pi pi-external-link spotify-link-icon" aria-hidden="true" />
         </a>
+        <a class="spotify-link" :href="text.externalEmbeds.bandUrl" target="_blank" rel="noopener noreferrer">
+          <span class="band-artwork" aria-hidden="true"><i class="pi pi-spotify" /></span>
+          <span class="spotify-link-copy">
+            <span>{{ text.externalEmbeds.bandTitle }}</span>
+            <small>{{ text.externalEmbeds.bandNote }}</small>
+          </span>
+          <i class="pi pi-external-link spotify-link-icon" aria-hidden="true" />
+        </a>
       </div>
     </article>
 
@@ -38,19 +50,38 @@ defineProps({
       <header class="external-card-head">
         <div>
           <p class="external-eyebrow">SoundCloud</p>
-          <h2>{{ text.externalEmbeds.soundcloudTitle }}</h2>
+          <h2>{{ text.externalEmbeds.selfProductionTitle }}</h2>
         </div>
         <i class="pi pi-cloud" aria-hidden="true" />
       </header>
 
-      <iframe
+      <div class="soundcloud-albums">
+        <section v-for="album in text.externalEmbeds.soundcloudAlbums" :key="album.url" class="soundcloud-release">
+          <h3>{{ album.title }}</h3>
+          <iframe
+            class="soundcloud-frame"
+            :title="`${album.title} — Patrizio Milione on SoundCloud`"
+            loading="lazy"
+            allow="autoplay"
+            :src="soundcloudAlbumEmbed(album.url)"
+          />
+          <a :href="album.url" target="_blank" rel="noopener noreferrer">{{ text.externalEmbeds.listenOnSoundcloud }} ↗</a>
+        </section>
+      </div>
+
+      <section class="soundcloud-release soundcloud-demos">
+        <h3>{{ text.externalEmbeds.soundcloudTitle }}</h3>
+        <iframe
         class="soundcloud-frame"
         title="Patrizio Milione on SoundCloud"
         scrolling="no"
         frameborder="no"
         allow="autoplay"
+        loading="lazy"
         :src="text.externalEmbeds.soundcloudEmbedUrl"
       />
+        <a href="https://soundcloud.com/patrizio-milione" target="_blank" rel="noopener noreferrer">{{ text.externalEmbeds.listenOnSoundcloud }} ↗</a>
+      </section>
     </article>
   </section>
 </template>
@@ -291,5 +322,58 @@ defineProps({
   min-height: 380px;
   border-radius: 0;
   background: var(--ivory);
+}
+.external-listening {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.external-card,
+.soundcloud-release {
+  min-width: 0;
+}
+
+.band-artwork {
+  display: grid;
+  place-items: center;
+  width: 3.8rem;
+  height: 3.8rem;
+  background: var(--gold);
+  color: var(--ink);
+  font-size: 1.8rem;
+}
+
+.soundcloud-albums {
+  display: grid;
+  gap: 2rem;
+}
+
+.soundcloud-release {
+  display: grid;
+  gap: 1rem;
+}
+
+.soundcloud-release h3 {
+  margin: 0;
+  color: var(--ink);
+  font-family: Oswald, Impact, sans-serif;
+  font-size: clamp(1.5rem, 3vw, 2rem);
+}
+
+.soundcloud-release a {
+  color: var(--burgundy);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.soundcloud-demos {
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--ink);
+}
+
+@media (min-width: 900px) {
+  .soundcloud-albums {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 </style>

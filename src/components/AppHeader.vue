@@ -2,10 +2,6 @@
 import { computed } from "vue";
 
 const props = defineProps({
-  theme: {
-    type: String,
-    default: "light"
-  },
   locale: {
     type: String,
     default: "en"
@@ -20,7 +16,7 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(["toggle-theme", "toggle-locale", "open-login", "toggle-epk-menu"]);
+const emit = defineEmits(["toggle-locale", "open-login", "toggle-epk-menu"]);
 
 const nameParts = computed(() => {
   const [firstName = "", ...rest] = String(props.text.app?.eyebrow ?? "").split(" ");
@@ -64,9 +60,6 @@ const flagSrc = computed(() => {
     </div>
 
     <div class="desktop-controls" aria-label="Site controls">
-      <button type="button" :aria-label="theme === 'dark' ? text.theme.light : text.theme.dark" :title="theme === 'dark' ? text.theme.light : text.theme.dark" @click="emit('toggle-theme')">
-        <i :class="theme === 'dark' ? 'pi pi-moon' : 'pi pi-sun'" />
-      </button>
       <button type="button" :aria-label="text.languageName" :title="text.languageName" @click="emit('toggle-locale')">
         <img class="flag-icon" :src="flagSrc" alt="" aria-hidden="true" />
       </button>

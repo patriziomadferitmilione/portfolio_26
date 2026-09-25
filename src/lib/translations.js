@@ -27,7 +27,16 @@ export const messages = {
       lessLabel: "Show me less"
     },
     externalEmbeds: {
-      spotifyTitle: "Earlier Singles",
+      spotifyTitle: "Earlier Singles & Bands",
+      bandTitle: "Bitter Almonds",
+      bandNote: "My former band",
+      bandUrl: "https://open.spotify.com/artist/1ON1ntrGaOdCUtRRXPlMDB",
+      selfProductionTitle: "Self Production",
+      listenOnSoundcloud: "Listen on SoundCloud",
+      soundcloudAlbums: [
+        { title: "Move", url: "https://soundcloud.com/patriziomilione/sets/move" },
+        { title: "Astral Agent", url: "https://soundcloud.com/patriziomilione/sets/astral-agent" }
+      ],
       spotifyItems: [
         {
           title: "But Then Comes the Night",
@@ -162,7 +171,16 @@ export const messages = {
       lessLabel: "Mostra meno"
     },
     externalEmbeds: {
-      spotifyTitle: "Prime uscite",
+      spotifyTitle: "Prime uscite e band",
+      bandTitle: "Bitter Almonds",
+      bandNote: "La mia vecchia band",
+      bandUrl: "https://open.spotify.com/artist/1ON1ntrGaOdCUtRRXPlMDB",
+      selfProductionTitle: "Autoproduzioni",
+      listenOnSoundcloud: "Ascolta su SoundCloud",
+      soundcloudAlbums: [
+        { title: "Move", url: "https://soundcloud.com/patriziomilione/sets/move" },
+        { title: "Astral Agent", url: "https://soundcloud.com/patriziomilione/sets/astral-agent" }
+      ],
       spotifyItems: [
         {
           title: "But Then Comes the Night",
