@@ -247,7 +247,7 @@ const formations = computed(() => t.value.formations.map(([name, format, detail,
         <ul>
           <li v-for="item in t.bookingItems" :key="item">{{ item }}</li>
         </ul>
-        <div class="booking-links"><a href="https://www.instagram.com/patriziomilione/" target="_blank" rel="noopener">Instagram</a><a
+        <div class="booking-links"><a
             href="https://www.youtube.com/@PatrizioMilione" target="_blank" rel="noopener">YouTube</a><a
             href="https://neonstrays.com" target="_blank" rel="noopener">Neon Strays</a></div>
       </div>
