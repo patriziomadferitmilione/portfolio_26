@@ -42,6 +42,7 @@ const copy = {
     productions: 'Productions ↘',
     independent: 'Independent by design',
     neonText: 'Independent rock project founded in 2025. Patrizio is its lead singer, songwriter, composer and creative director.',
+    neonAlbum: 'The debut album, Viciously Zen, was released on September 17 and is available on the band’s own platform at neonstrays.com.',
     neonNote: 'Built on a direct relationship with listeners, independent distribution and creative freedom.',
     visit: 'Visit Neon Strays',
     watch: 'Watch video',
@@ -59,7 +60,7 @@ const copy = {
     modal: ['Live formation', 'Typical duration', 'Ideal venues', 'Technical requirements', 'Available on request'],
     galleryPlaceholder: 'Gallery image placeholder',
     formations: [['Solo Acoustic', 'Voice + Acoustic Guitar', 'An intimate, songwriter-led set built around original material and carefully chosen covers.', '45–120 minutes', 'Listening rooms, bars, private events'], ['Piano & Voice', 'Voice + Piano', 'A dynamic piano-led performance for elegant rooms and focused audiences.', '45–90 minutes', 'Theatres, ceremonies, cultural events'], ['Acoustic Duo', 'Two Guitars + Two Voices', 'Harmonies, rhythm and a warm live atmosphere with an expanded acoustic sound.', '60–120 minutes', 'Festivals, venues, receptions'], ['Neon Strays', 'Full Rock Band', 'A direct, high-energy original rock show from the independent project founded by Patrizio.', '45–90 minutes', 'Clubs, festivals, headline shows'], ['Neon Strays Semi Acoustic', 'Voice · Piano · Bass · Drums', 'A stripped-back band arrangement with texture, dynamics and close connection.', '45–75 minutes', 'Showcases, galleries, intimate venues']],
-    timeline: [['Age 6', 'Started piano studies.'], ['Age 13', 'First band as keyboard player.'], ['Age 17–18', 'Guitar, songwriting and first band as lead singer.'], ['London', 'Performed in tens of iconic venues like Water Rats, Half Moon, Barfly, Blues Kitchen, Spice of Life and Dublin Castle.'], ['Age 23', 'Returned to Turin, released first original recordings and started busking.'], ['Age 25', 'Moved to Sydney. Performed at Hard Rock Café Sydney and built a heavy busking practice.'], ['2024–26', 'Returned to music, founded Neon Strays, released an EP, won an emerging artist competition and began work on upcoming albums.']],
+    timeline: [['Age 6', 'Started piano studies.'], ['Age 13', 'First band as keyboard player.'], ['Age 17–18', 'Guitar, songwriting and first band as lead singer.'], ['London', 'Performed in tens of iconic venues like Water Rats, Half Moon, Barfly, Blues Kitchen, Spice of Life and Dublin Castle.'], ['Age 23', 'Returned to Turin, released first original recordings and started busking.'], ['Age 25', 'Moved to Sydney. Performed at Hard Rock Café Sydney and built a heavy busking practice.'], ['2024–26', 'Returned to music, founded Neon Strays, released an EP, won an emerging artist competition and released the Neon Strays debut album Viciously Zen on September 17.']],
     gallery: ['Live / 01', 'Studio / 02', 'Busking / 03', 'Band / 04', 'Travel / 05', 'Live / 06']
   },
   it: {
@@ -86,6 +87,7 @@ const copy = {
     productions: 'Produzioni ↘',
     independent: 'Indipendenti per scelta',
     neonText: 'Progetto rock indipendente fondato nel 2025. Patrizio ne è cantante, autore, compositore e direttore creativo.',
+    neonAlbum: 'L’album di debutto, Viciously Zen, è uscito il 17 settembre ed è disponibile sulla piattaforma della band, neonstrays.com.',
     neonNote: 'Un rapporto diretto con gli ascoltatori, distribuzione indipendente e libertà creativa.',
     visit: 'Visita Neon Strays',
     watch: 'Guarda il video',
@@ -103,7 +105,7 @@ const copy = {
     modal: ['Formazione live', 'Durata tipica', 'Location ideali', 'Esigenze tecniche', 'Disponibili su richiesta'],
     galleryPlaceholder: 'Immagine galleria segnaposto',
     formations: [['Solo Acoustic', 'Voce + Chitarra acustica', 'Un set intimo da cantautore, costruito su materiale originale e cover selezionate.', '45–120 minuti', 'Listening room, locali, eventi privati'], ['Piano & Voice', 'Voce + Pianoforte', 'Una performance dinamica guidata dal pianoforte, per spazi eleganti e pubblico attento.', '45–90 minuti', 'Teatri, cerimonie, eventi culturali'], ['Acoustic Duo', 'Due chitarre + due voci', 'Armonie, ritmo e un’atmosfera calda con un suono acustico più ricco.', '60–120 minuti', 'Festival, locali, ricevimenti'], ['Neon Strays', 'Rock band completa', 'Uno show rock originale, diretto ed energico del progetto indipendente fondato da Patrizio.', '45–90 minuti', 'Club, festival, headline show'], ['Neon Strays Semi Acoustic', 'Voce · Pianoforte · Basso · Batteria', 'Un arrangiamento di band essenziale, fatto di texture, dinamica e connessione.', '45–75 minuti', 'Showcase, gallerie, locali intimi']],
-    timeline: [['6 anni', 'Inizio degli studi di pianoforte.'], ['13 anni', 'Prima band come tastierista.'], ['17–18 anni', 'Chitarra, scrittura e prima band come cantante.'], ['Londra', 'Esibizioni in decine di locali iconici come Water Rats, Half Moon, Barfly, Blues Kitchen, Spice of Life e Dublin Castle.'], ['23 anni', 'Rientro a Torino, prime registrazioni originali e inizio del busking.'], ['25 anni', 'Trasferimento a Sydney, esibizione all’Hard Rock Café e intensa attività di busking.'], ['2024–26', 'Ritorno alla musica, fondazione dei Neon Strays, uscita di un EP, vittoria di un concorso per emergenti e lavoro sui prossimi album.']],
+    timeline: [['6 anni', 'Inizio degli studi di pianoforte.'], ['13 anni', 'Prima band come tastierista.'], ['17–18 anni', 'Chitarra, scrittura e prima band come cantante.'], ['Londra', 'Esibizioni in decine di locali iconici come Water Rats, Half Moon, Barfly, Blues Kitchen, Spice of Life e Dublin Castle.'], ['23 anni', 'Rientro a Torino, prime registrazioni originali e inizio del busking.'], ['25 anni', 'Trasferimento a Sydney, esibizione all’Hard Rock Café e intensa attività di busking.'], ['2024–26', 'Ritorno alla musica, fondazione dei Neon Strays, uscita di un EP, vittoria di un concorso per emergenti e uscita dell’album di debutto dei Neon Strays, Viciously Zen, il 17 settembre.']],
     gallery: ['Live / 01', 'Studio / 02', 'Busking / 03', 'Band / 04', 'Viaggi / 05', 'Live / 06']
   }
 };
@@ -217,6 +219,7 @@ const formations = computed(() => t.value.formations.map(([name, format, detail,
       <div><p class="kicker light">{{ t.independent }}</p>
         <h2>Neon<br><em>Strays.</em></h2>
         <p>{{ t.neonText }}</p>
+        <p>{{ t.neonAlbum }}</p>
         <p class="neon-note">{{ t.neonNote }}</p><a class="button button-light" href="https://neonstrays.com"
                                                     target="_blank" rel="noopener">{{ t.visit }}</a></div>
       <a class="video-card" href="https://www.youtube.com/watch?v=wyhorwkJpAM" target="_blank"
